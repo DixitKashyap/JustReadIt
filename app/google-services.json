@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "497427337422",
+    "project_id": "justreadit-a4892",
+    "storage_bucket": "justreadit-a4892.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:497427337422:android:617bfeb1a1475859d5c09f",
+        "android_client_info": {
+          "package_name": "com.dixitkumar.justreadit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWPkXaNXHPliJMKxHc6Ua0WNJR2xCdNus"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
