@@ -1,15 +1,10 @@
 package com.dixitkumar.justreadit.screens.login
 
-import android.graphics.drawable.Icon
-import android.text.InputType
-import android.widget.ScrollView
-import android.widget.Space
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,25 +13,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Facebook
 import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.PermIdentity
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -48,8 +42,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,24 +53,27 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dixitkumar.justreadit.R
+import com.dixitkumar.justreadit.navigation.ReaderScreens
 
 @Composable
-fun LoginScreen(navController: NavController){
-    LoginScreenUi()
+fun LoginScreen(navController: NavController ,viewModel: LoginScreenViewModel = hiltViewModel()){
+    LoginScreenUi(navController,viewModel = viewModel)
 }
 
-@Preview(showBackground = true)
 @Composable
-fun LoginScreenUi(){
+fun LoginScreenUi(
+    navController: NavController,
+    viewModel: LoginScreenViewModel
+){
     val username = rememberSaveable{ mutableStateOf("")}
     val password = remember {
         mutableStateOf("")
@@ -86,14 +81,24 @@ fun LoginScreenUi(){
     val isFocused = remember {
         mutableStateOf(false)
     }
+    val showPassword = remember {
+        mutableStateOf(false)
+    }
+
+
         Surface(modifier = Modifier
             .fillMaxHeight()
             .fillMaxWidth(),
             color = Color.White) {
-            Column(modifier = Modifier.fillMaxSize(),
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(
+                    state = rememberScrollState(),
+                    enabled = true
+                ),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top) {
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Image(painter = painterResource(id = R.drawable.splash_image),
                     contentDescription = "Splash Image",
@@ -116,6 +121,7 @@ fun LoginScreenUi(){
                     fontWeight = FontWeight.Bold,
                     color = Color.Gray.copy(alpha = 0.8f))
 
+                Spacer(modifier = Modifier.height(30.dp))
                 InputField(
                     icon = Icons.Default.PermIdentity,
                     elevation = 20.dp,
@@ -123,16 +129,20 @@ fun LoginScreenUi(){
                     keyboardType = KeyboardType.Email,
                     color = colorResource(id = R.color.blue),
                     label = "Username")
+                Spacer(modifier = Modifier.height(20.dp))
+
                 InputField(
                     icon = Icons.Default.LockOpen,
                     elevation = 20.dp,
                     textState =password,
                     keyboardType = KeyboardType.Password,
                     color =  colorResource(id = R.color.blue),
-                    label = "Password"
+                    label = "Password",
+                    showPassword = showPassword,
+                    isPasswordFiled = true
                 )
 
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 Row (modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End){
@@ -141,15 +151,22 @@ fun LoginScreenUi(){
                 }
 
                 Spacer(modifier = Modifier.height(30.dp))
-                LoginButton(label = "LOG IN", onClick = { /*TODO*/}, cornerRadius = 40.dp,
+                LoginButton(label = "LOG IN", cornerRadius = 40.dp,
                     modifier = Modifier
-                        .width(220.dp)
-                        .height(60.dp),
-                    fontSize = 20,
+                        .width(200.dp)
+                        .height(50.dp),
+                    fontSize = 17,
                     color = colorResource(id = R.color.blue),
-                    elevation = 20.dp)
+                    elevation = 20.dp, onClick = {
+                        if(username.value.trim().isNotEmpty() && password.value.trim().isNotEmpty()){
+                            viewModel.SignInWithEmailAndPassword(username.value.trim().toString(),password.value.trim().toString()){
+                                navController.popBackStack()
+                                navController.navigate(route = ReaderScreens.HomeScreen.name)
+                            }
+                        }
+                    })
 
-                Spacer(modifier = Modifier.height(50.dp))
+                Spacer(modifier = Modifier.height(30.dp))
                 Row (modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically){
@@ -160,15 +177,33 @@ fun LoginScreenUi(){
                 Spacer(modifier = Modifier.height(30.dp))
                 MoreLoginOptions()
 
-                Spacer(modifier = Modifier.height(45.dp))
-                Row(modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center) {
-                    Text(text = "Don't have an account?")
-                    Text(text = " Sign Up",color = colorResource(id = R.color.blue), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(30.dp))
+                loginOrSignInRow(msg = "Don't hava an account? ", label ="Sign Up" ){
+                    navController.navigate(route = ReaderScreens.SignupScreen.name)
                 }
+
             }
         }
+}
+
+@Composable
+fun loginOrSignInRow(
+    msg : String,
+    label : String,
+    onClick: () -> Unit ={}
+){
+    Row(modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center) {
+        Text(text = msg)
+        Text(text = label,
+            color = colorResource(id = R.color.blue),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clickable {
+                onClick()
+            })
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -179,7 +214,11 @@ fun InputField(
           elevation : Dp,
           icon : ImageVector,
           keyboardType: KeyboardType,
-          color : Color
+          showPassword : MutableState<Boolean> = remember {
+              mutableStateOf(true)
+          },
+          color : Color,
+          isPasswordFiled : Boolean = false
 ){
 
     //Adjusting Card According to the display width
@@ -194,8 +233,10 @@ fun InputField(
         mutableStateOf(false)
     }
 
-    Spacer(modifier = Modifier.height(30.dp))
-    Card(modifier = Modifier.width((screenWidth/100)*95),
+
+    Card(modifier = Modifier
+        .width((screenWidth / 100) * 95)
+        .height(60.dp),
         shape = RoundedCornerShape(30.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     , elevation = CardDefaults.cardElevation(elevation),border = if(isFocused.value)BorderStroke(width = 2.dp, color = color)
@@ -229,6 +270,29 @@ fun InputField(
                      isFocused.value = false
                      keyboardController?.hide()
                 },
+                visualTransformation =
+                if (showPassword.value) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    if(isPasswordFiled){
+
+                    val (icon, iconColor) = if (showPassword.value) {
+                        Pair(
+                            Icons.Filled.Visibility,
+                            colorResource(id = R.color.blue)
+                        )
+                    } else {
+                        Pair(Icons.Filled.VisibilityOff, colorResource(id = R.color.grey))
+                    }
+
+                    IconButton(onClick = { showPassword.value = !showPassword.value }) {
+                        Icon(
+                            icon,
+                            contentDescription = "Visibility",
+                            tint = iconColor
+                        )
+                    }
+                    }
+                },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = keyboardType,
                     autoCorrect = true
@@ -250,12 +314,13 @@ fun InputField(
 fun LoginButton(
     modifier: Modifier,
     label: String,
-    onClick :() -> Unit,
     cornerRadius : Dp,
     color: Color,
     fontSize : Int = 15,
     fontWeight: FontWeight = FontWeight.Bold,
-    elevation: Dp
+    elevation: Dp,
+    enabled : Boolean = true,
+    onClick : () -> Unit = {}
 
 ){
     Row (
@@ -265,6 +330,7 @@ fun LoginButton(
 
         Button(onClick = { onClick() },
             modifier = modifier,
+            enabled = enabled,
             elevation = ButtonDefaults.buttonElevation(elevation),
             shape = RoundedCornerShape(cornerRadius),
             colors = ButtonDefaults.buttonColors(containerColor = color)
