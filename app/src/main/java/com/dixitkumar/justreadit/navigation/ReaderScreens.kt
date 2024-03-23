@@ -9,6 +9,7 @@ enum class ReaderScreens {
     MainScreen,
     HomeScreen,
     DetailsScreen,
+    MoreBookScreen,
     SearchScreen,
     MyReadingsScreen,
     WishlistScreen,
@@ -22,6 +23,7 @@ enum class ReaderScreens {
             SignupScreen.name -> SignupScreen
             HomeScreen.name -> HomeScreen
             DetailsScreen.name -> DetailsScreen
+            MoreBookScreen.name -> MoreBookScreen
 
             null -> HomeScreen
             else -> throw IllegalArgumentException("Route $route is not recognised")

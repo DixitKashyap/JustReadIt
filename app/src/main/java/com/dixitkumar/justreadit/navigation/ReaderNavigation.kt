@@ -11,6 +11,7 @@ import com.dixitkumar.justreadit.screens.SplashScreen
 import com.dixitkumar.justreadit.screens.details.Book_DetailsScreen
 import com.dixitkumar.justreadit.screens.home.HomeScreen
 import com.dixitkumar.justreadit.screens.login.LoginScreen
+import com.dixitkumar.justreadit.screens.morebooks.More_BooksScreen
 import com.dixitkumar.justreadit.screens.signup.SignUpScreen
 
 @Composable
@@ -40,6 +41,15 @@ fun ReaderNavigation(){
         })){backStackEntry ->
             backStackEntry.arguments?.getString("bookId").let{
                 Book_DetailsScreen(navController = navController,bookId = it.toString())
+            }
+        }
+
+        val moreBooks = ReaderScreens.MoreBookScreen.name
+        composable(route= "$moreBooks/{moreDetails}",arguments = listOf(navArgument("moreDetails"){
+            type = NavType.StringType
+        })){backStackEntry->
+            backStackEntry.arguments?.getString("moreDetails").let{
+                More_BooksScreen(navController = navController,moreDetails = it.toString())
             }
         }
     }

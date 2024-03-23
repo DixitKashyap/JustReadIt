@@ -7,7 +7,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dixitkumar.justreadit.data.Resource
-import com.dixitkumar.justreadit.model.Book
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.repository.BookRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,23 +18,27 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
     var default_list : List<Item> by mutableStateOf(listOf())
     var life_style_books :  List<Item> by mutableStateOf(listOf())
     var motivational_books :  List<Item> by mutableStateOf(listOf())
-    var fictional_books :  List<Item> by mutableStateOf(listOf())
+    var detective_novels :  List<Item> by mutableStateOf(listOf())
     var history_books :  List<Item> by mutableStateOf(listOf())
     var android_book :  List<Item> by mutableStateOf(listOf())
-    var comic_books :  List<Item> by mutableStateOf(listOf())
-    var finance_books :  List<Item> by mutableStateOf(listOf())
+    var novels :  List<Item> by mutableStateOf(listOf())
+    var manga :   List<Item> by mutableStateOf(listOf())
+    var mystery_thriller_books :  List<Item> by mutableStateOf(listOf())
     var isLoading : Boolean by mutableStateOf(true)
+    var autobiography : List<Item> by mutableStateOf(listOf())
 
 
     init {
         loadBooks()
         lifeStyleBook()
         motivationalBook()
-        fictionalBook()
+        detectiveNovels()
         historyBook()
         androidBook()
-        comicBook()
-        financialBooks()
+        Novels()
+        getMange()
+        thrillerBooks()
+        autobiographyBook()
     }
 
     private fun loadBooks(){
@@ -46,7 +49,7 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
         viewModelScope.launch {
             isLoading = true
             try{
-                when(val response = repository.getLifeStyleBooks()){
+                when(val response = repository.getBooks("subject:health")){
                     is Resource.Success ->{
                         life_style_books = response.data!!
                         if(life_style_books.isNotEmpty()) isLoading = false
@@ -70,7 +73,7 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
         viewModelScope.launch {
             isLoading = true
             try{
-                when(val response = repository.getMotivationalBooks()){
+                when(val response = repository.getBooks("subject:self_help")){
                     is Resource.Success ->{
                         motivational_books = response.data!!
                         if(motivational_books.isNotEmpty()) isLoading = false
@@ -90,13 +93,13 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
             }
         }
     }
-    private fun fictionalBook(){
+    private fun detectiveNovels(){
         viewModelScope.launch {
             isLoading = true
             try{
-                when(val response = repository.getFictionBooks()){
+                when(val response = repository.getBooks("subject:spirituality")){
                     is Resource.Success ->{
-                        fictional_books = response.data!!
+                        detective_novels = response.data!!
                         if(life_style_books.isNotEmpty()) isLoading = false
                     }
                     is Resource.Error ->{
@@ -118,7 +121,7 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
         viewModelScope.launch {
             isLoading = true
             try{
-                when(val response = repository.getHistoryBooks()){
+                when(val response = repository.getBooks("subject:history")){
                     is Resource.Success ->{
                         history_books = response.data!!
                         if(life_style_books.isNotEmpty()) isLoading = false
@@ -143,7 +146,7 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
         viewModelScope.launch {
             isLoading = true
             try {
-                when (val response = repository.getAndroidBooks()) {
+                when (val response = repository.getBooks("subject:computer")) {
                     is Resource.Success -> {
                         android_book = response.data!!
                         if (life_style_books.isNotEmpty()) isLoading = false
@@ -165,13 +168,37 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
             }
         }
     }
-   private fun comicBook(){
+   private fun Novels(){
         viewModelScope.launch {
             isLoading = true
             try{
-                when(val response = repository.getComics()){
+                when(val response = repository.getBooks("subject:novels")){
                     is Resource.Success ->{
-                        comic_books = response.data!!
+                        novels= response.data!!
+                        if(life_style_books.isNotEmpty()) isLoading = false
+                    }
+                    is Resource.Error ->{
+                        isLoading = false
+                        Log.e("TAG","Book Searching : Failed Getting Books")
+                    }
+                    else ->{
+                        isLoading = false
+                        Log.d("TAG","Error While Loading the books")
+                    }
+                }
+            }catch (e : Exception){
+                isLoading = false
+                Log.d("TAG","searchBooks : ${e.message.toString()}")
+            }
+        }
+    }
+    private fun getMange(){
+        viewModelScope.launch {
+            isLoading = true
+            try{
+                when(val response = repository.getBooks("subject:anime")){
+                    is Resource.Success ->{
+                        manga= response.data!!
                         if(life_style_books.isNotEmpty()) isLoading = false
                     }
                     is Resource.Error ->{
@@ -190,14 +217,38 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
         }
     }
 
-    private fun financialBooks(){
+    private fun thrillerBooks(){
         viewModelScope.launch {
             isLoading = true
             try{
-                when(val response = repository.getFinance()){
+                when(val response = repository.getBooks("Mystery&Thriller")){
                     is Resource.Success ->{
-                        finance_books = response.data!!
+                        mystery_thriller_books = response.data!!
                         if(life_style_books.isNotEmpty()) isLoading = false
+                    }
+                    is Resource.Error ->{
+                        isLoading = false
+                        Log.e("TAG","Book Searching : Failed Getting Books")
+                    }
+                    else ->{
+                        isLoading = false
+                        Log.d("TAG","Error While Loading the books")
+                    }
+                }
+            }catch (e : Exception){
+                isLoading = false
+                Log.d("TAG","searchBooks : ${e.message.toString()}")
+            }
+        }
+    }
+    private fun autobiographyBook(){
+        viewModelScope.launch {
+            isLoading = true
+            try{
+                when(val response = repository.getBooks("subject:biography")){
+                    is Resource.Success ->{
+                       autobiography = response.data!!
+                        if(autobiography.isNotEmpty()) isLoading = false
                     }
                     is Resource.Error ->{
                         isLoading = false
