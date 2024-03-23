@@ -21,6 +21,9 @@ class DetailsScreenViewModel @Inject constructor(private val repository: BookRep
     var author_books : List<Item> by mutableStateOf(listOf())
     var relatedBooks :  List<Item> by mutableStateOf(listOf())
     var isLoading : Boolean by mutableStateOf(true)
+
+    var isLoading_author_books = mutableStateOf(false)
+    var isLoading_relatedBooks = mutableStateOf(false)
     suspend fun getBookInfo(bookId : String): Resource<Item>{
         return  repository.getBookInfo(bookId)
     }
@@ -51,6 +54,10 @@ class DetailsScreenViewModel @Inject constructor(private val repository: BookRep
                 isLoading = false
                 Log.d("TAG","Exception Occured : ${e.message.toString()}")
             }
+            finally {
+                isLoading_author_books.value = false
+            }
+
         }
     }
     fun getRelatedBook(query : String){
@@ -77,6 +84,9 @@ class DetailsScreenViewModel @Inject constructor(private val repository: BookRep
             }catch (e : Exception){
                 isLoading = false
                 Log.d("TAG","Exception Occured While Getting Books : ${e.message.toString()}")
+            }
+            finally {
+                isLoading_relatedBooks.value = false
             }
         }
     }

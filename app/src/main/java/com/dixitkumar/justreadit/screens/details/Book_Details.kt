@@ -44,6 +44,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -173,7 +174,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                 GetAuthorRelatedBooks(readerNavController = navController, searchQuery = formattedName,viewModel= viewModel)
             }
 
-            if(formattedCategory.isNotEmpty()){
+            if(formattedCategory.isNotEmpty() && formattedCategory.contains("null") ==false){
                 GetRelatedBooks(readerNavController = navController, searchQuery = formattedCategory,viewModel=viewModel)
             }
         }
@@ -186,7 +187,11 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
 @Composable
 fun GetRelatedBooks(readerNavController: NavController,searchQuery : String,
                           viewModel: DetailsScreenViewModel = hiltViewModel()) {
-    viewModel.getRelatedBook("subject:${searchQuery}")
+    LaunchedEffect(searchQuery) {
+        if(viewModel.relatedBooks.isEmpty()){
+            viewModel.getRelatedBook("subject:${searchQuery}")
+        }
+    }
     if(viewModel.relatedBooks.isNotEmpty()){
 
         SingleCategoryBooks(rowTitle = searchQuery, books =viewModel.relatedBooks, readerNavController = readerNavController ){
@@ -198,7 +203,12 @@ fun GetRelatedBooks(readerNavController: NavController,searchQuery : String,
 @Composable
 fun GetAuthorRelatedBooks(readerNavController: NavController,searchQuery : String,
                  viewModel: DetailsScreenViewModel = hiltViewModel()) {
-    viewModel.getAuthorList("author=${searchQuery}")
+    LaunchedEffect(searchQuery) {
+        if(viewModel.author_books.isEmpty()){
+            viewModel.getAuthorList("author=${searchQuery}")
+
+        }
+    }
     if(viewModel.author_books.isNotEmpty()){
 
         SingleCategoryBooks(rowTitle = searchQuery, books =viewModel.author_books, readerNavController = readerNavController ){

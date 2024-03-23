@@ -18,6 +18,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,34 +33,47 @@ import com.dixitkumar.justreadit.screens.home.BookItems
 
 @Composable
 fun More_BooksScreen(navController: NavController,moreDetails : String,viewModel : DetailsScreenViewModel = hiltViewModel()) {
+
+    var isLoading_author_books = viewModel.isLoading_author_books.value
+    var isLoading_related_books = viewModel.isLoading_relatedBooks.value
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
-//        if(viewModel.isLoading == true){
-//            Row (modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically){
-//                LinearProgressIndicator()
-//            }
-//        }else{
-            Column {
-                if(moreDetails.contains("author")){
-                    viewModel.getAuthorList(moreDetails)
-                    Log.d("TAG","More Content"+moreDetails)
-                    if(viewModel.author_books.isNotEmpty()) {
-                        MoreScreenUi(
-                            moreDetails = "By ${moreDetails.split("=")[1]}",
-                            list = viewModel.author_books,
-                            navController = navController
-                        )
-                    }
-                }else if(moreDetails.contains("subject")){
-                    viewModel.getRelatedBook(moreDetails)
-                    Log.d("TAG","More Content" +moreDetails)
-                    if(viewModel.relatedBooks.isNotEmpty()){
-                        MoreScreenUi(moreDetails = "${moreDetails.split(":")[1]}",
-                            list =viewModel.relatedBooks,navController=navController)
-                    }
-                }
+
+
+        LaunchedEffect(moreDetails) {
+            if (moreDetails.contains("author") && viewModel.author_books.isEmpty()) {
+                viewModel.getAuthorList(moreDetails)
+            } else if (moreDetails.contains("subject") && viewModel.relatedBooks.isEmpty()) {
+                viewModel.getRelatedBook(moreDetails)
             }
         }
-//    }
+        Column {
+            if(moreDetails.contains("author")){
+                if(viewModel.isLoading){
+                    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center){
+                        LinearProgressIndicator()
+                    }
+                }else{
+                    MoreScreenUi(
+                        moreDetails = "By ${moreDetails.split("=")[1]}",
+                        list = viewModel.author_books,
+                        navController = navController
+                    )
+                }
+            }else{
+                if(viewModel.isLoading){
+                    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center){
+                        LinearProgressIndicator()
+                    }
+                }else{
+                    MoreScreenUi(
+                        moreDetails = "${moreDetails.split(":")[1]}",
+                            list =viewModel.relatedBooks,
+                        navController=navController)
+                }
+            }
+
+        }
+    }
 }
 
 @Composable
