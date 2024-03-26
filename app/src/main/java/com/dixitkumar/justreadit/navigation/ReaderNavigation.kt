@@ -12,6 +12,7 @@ import com.dixitkumar.justreadit.screens.details.Book_DetailsScreen
 import com.dixitkumar.justreadit.screens.home.HomeScreen
 import com.dixitkumar.justreadit.screens.login.LoginScreen
 import com.dixitkumar.justreadit.screens.morebooks.More_BooksScreen
+import com.dixitkumar.justreadit.screens.search.SearchScreen
 import com.dixitkumar.justreadit.screens.signup.SignUpScreen
 
 @Composable
@@ -51,6 +52,10 @@ fun ReaderNavigation(){
             backStackEntry.arguments?.getString("moreDetails").let{
                 More_BooksScreen(navController = navController,moreDetails = it.toString())
             }
+        }
+        
+        composable(route = ReaderScreens.SearchScreen.name){
+            SearchScreen(navController = navController)
         }
     }
 }

@@ -77,7 +77,7 @@ fun HomeScreen (bottomNavController: NavController,readerNavController: NavContr
             ) {
 
                     UserDetailRow()
-                    TopRow(bottomNavController= bottomNavController)
+                    TopRow(bottomNavController= bottomNavController, readerNavController = readerNavController)
                     ReadingNowArea()
                     Spacer(modifier = Modifier.width(100.dp))
                     BooksOptions(searchQuery = "Health", list =viewModel.life_style_books, readerNavController = readerNavController)
@@ -120,7 +120,7 @@ fun UserDetailRow(){
     }
 }
 @Composable
-fun TopRow(bottomNavController: NavController){
+fun TopRow(bottomNavController: NavController,readerNavController: NavController){
     Card (modifier = Modifier.padding(top = 8.dp, start = 14.dp, end = 14.dp),
         colors = CardDefaults.cardColors(Color.LightGray),
         elevation = CardDefaults.cardElevation(12.dp),
@@ -130,7 +130,7 @@ fun TopRow(bottomNavController: NavController){
                 .fillMaxWidth()
                 .background(Color.White)
                 .padding(12.dp).clickable {
-                   bottomNavController.navigate(route = ReaderScreens.SearchScreen.name)
+                   readerNavController.navigate(route = ReaderScreens.SearchScreen.name)
                 },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween

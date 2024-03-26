@@ -16,10 +16,7 @@ fun MainScreenNavigation(bottomNavController: NavHostController,readerNavigation
         composable(route = ReaderScreens.HomeScreen.name){
             HomeScreen(bottomNavController = bottomNavController,readerNavigation)
         }
-        
-        composable(route = ReaderScreens.SearchScreen.name){
-            SearchScreen(navController = bottomNavController)
-        }
+
         composable(route = ReaderScreens.MyReadingsScreen.name){
             ReadingScreen(navController = bottomNavController)
         }

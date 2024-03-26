@@ -36,13 +36,6 @@ fun getBottomNavItem() :List<BottomNavItem>{
                 label = "Home"
             ),
     BottomNavItem(
-        title = ReaderScreens.SearchScreen.name,
-        selectedIcon = Icons.Filled.Search,
-        unselectedIcon = Icons.Outlined.Search,
-        label = "Search"
-
-    ),
-    BottomNavItem(
         title = ReaderScreens.MyReadingsScreen.name,
         selectedIcon = Icons.Filled.LibraryBooks,
         unselectedIcon = Icons.Outlined.LibraryBooks,

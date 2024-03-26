@@ -17,10 +17,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.model.getBottomNavItem
 import com.dixitkumar.justreadit.navigation.MainScreenNavigation
 
@@ -58,7 +60,8 @@ fun MainScreen(readerNavController: NavHostController){
                                     }
                                 }, label = {
                                     Text(
-                                        text = item.label
+                                        text = item.label,
+                                        color = if(index == selectedItemIndex.value)colorResource(id = R.color.blue)else Color.DarkGray
                                     )
                                 },
                                 alwaysShowLabel = true,
@@ -67,11 +70,12 @@ fun MainScreen(readerNavController: NavHostController){
                                         imageVector = if (index == selectedItemIndex.value) {
                                             item.selectedIcon
                                         } else item.unselectedIcon,
-                                        contentDescription = item.label
+                                        contentDescription = item.label,
+                                        tint = if(index == selectedItemIndex.value) colorResource(id = R.color.blue)else Color.DarkGray
                                     )
                                 },
                                 colors = NavigationBarItemDefaults.colors(
-                                    indicatorColor = Color.White
+                                    indicatorColor = colorResource(id = R.color.blue).copy(0.1f)
                                 ))
                         }
                     }
