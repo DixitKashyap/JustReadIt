@@ -1,6 +1,7 @@
 package com.dixitkumar.justreadit.screens.home
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,16 +32,25 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -50,8 +60,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import com.dixitkumar.justreadit.R
+import com.dixitkumar.justreadit.data.Resource
 import com.dixitkumar.justreadit.model.Item
+import com.dixitkumar.justreadit.model.MUser
 import com.dixitkumar.justreadit.navigation.ReaderScreens
+import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
+import com.dixitkumar.justreadit.utils.getCurrentUserId
+import com.dixitkumar.justreadit.utils.getScreenWidth
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.coroutineScope
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -63,8 +82,12 @@ fun HomeScreen (bottomNavController: NavController,readerNavController: NavContr
                 .padding(bottom = 80.dp)
         ) {
             if(viewModel.isLoading == true){
-                Column(modifier = Modifier.fillMaxWidth().fillMaxHeight(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-                    LinearProgressIndicator()
+                Column(modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = colorResource(id = R.color.blue))
                 }
             }else{
             Column(
@@ -76,8 +99,8 @@ fun HomeScreen (bottomNavController: NavController,readerNavController: NavContr
                     )
             ) {
 
-                    UserDetailRow()
-                    TopRow(bottomNavController= bottomNavController, readerNavController = readerNavController)
+                    UserDetailRow(navController = readerNavController)
+                    HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
                     ReadingNowArea()
                     Spacer(modifier = Modifier.width(100.dp))
                     BooksOptions(searchQuery = "Health", list =viewModel.life_style_books, readerNavController = readerNavController)
@@ -95,7 +118,8 @@ fun HomeScreen (bottomNavController: NavController,readerNavController: NavContr
         }
 }
 @Composable
-fun UserDetailRow(){
+fun UserDetailRow(navController: NavController){
+    val screenWidthDp = getScreenWidth()
     Row (modifier = Modifier
         .fillMaxWidth()
         .height(80.dp)
@@ -103,8 +127,22 @@ fun UserDetailRow(){
             Icon(imageVector = Icons.Filled.AccountCircle, contentDescription ="Person Icon",
                 tint = Color.Gray, modifier = Modifier.size(40.dp))
         Spacer(modifier = Modifier.width(10.dp))
+
+        val username = remember { mutableStateOf("") }
+        val userId = getCurrentUserId()
+
+        LaunchedEffect(userId) {
+            val userName = FirebaseFirestore.getInstance().collection("users")
+                .get().addOnCompleteListener {
+                    for (id in it.result){
+                        if(userId.contentEquals(id["userId"].toString())){
+                            username.value = id["userName"].toString()
+                        }
+                    }
+                }
+        }
         Column {
-            Text(text = "Welcome,Dixit",
+            Text(text = "Welcome,${username.value}",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
@@ -115,104 +153,126 @@ fun UserDetailRow(){
                 color = Color.Gray
             )
         }
-        Spacer(modifier = Modifier.width(130.dp))
-        Icon(imageVector = Icons.Default.Logout, contentDescription ="Log Out Button", tint = Color.Gray)
-    }
-}
-@Composable
-fun TopRow(bottomNavController: NavController,readerNavController: NavController){
-    Card (modifier = Modifier.padding(top = 8.dp, start = 14.dp, end = 14.dp),
-        colors = CardDefaults.cardColors(Color.LightGray),
-        elevation = CardDefaults.cardElevation(12.dp),
-        shape = RoundedCornerShape(30.dp)){
-        Row(
+        val spacer = (screenWidthDp/100)*20
+        Spacer(modifier = Modifier.width(spacer))
+        Icon(imageVector = Icons.Default.Search,
+            contentDescription = "Search Button",
+            tint = Color.DarkGray,
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White)
-                .padding(12.dp).clickable {
-                   readerNavController.navigate(route = ReaderScreens.SearchScreen.name)
-                },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = "Type book name or author",
-                fontSize = 17.sp,
-                color = Color.Gray)
-            Icon(imageVector = Icons.Default.Search, contentDescription = "Search Icon", tint = Color.LightGray)
-        }
+                .size(30.dp)
+                .clickable {
+                    navController.navigate(route = ReaderScreens.SearchScreen.name)
+                }
+        )
+        Spacer(modifier = Modifier.width(15.dp))
+        Icon(imageVector = Icons.Default.Logout,
+            contentDescription ="Log Out Button",
+            tint = Color.Gray,
+            modifier = Modifier.clickable {
+                FirebaseAuth.getInstance().signOut()
+                Thread.sleep(1000)
+                navController.navigate(route = ReaderScreens.LoginScreen.name)
+            })
+
     }
 }
 
 @Composable
-fun ReadingNowArea(viewModel: HomeScreenViewModel = hiltViewModel()){
+fun ReadingNowArea(viewModel: FirebaseViewModel = hiltViewModel(),homeScreenViewModel: HomeScreenViewModel = hiltViewModel()){
+    var listUser = emptyList<MUser>()
+    val currentUser = getCurrentUserId()
 
-    val listOfBooks = viewModel.default_list
-    var book : Item? =null
-    if (listOfBooks.isNotEmpty()) {
-        book = listOfBooks[0]
-    }
+    if(!viewModel.data.value.data.isNullOrEmpty()){
+        Log.d("TAG","USER ID ${currentUser.toString()}")
+         listUser = viewModel.data.value?.data!!.toList().filter {
+             it.userId.toString().contentEquals(currentUser)
+         }
+     if(listUser.isNotEmpty()){
+     val user = listUser[0]
+
+    if(!user.readingList.isNullOrEmpty()) {
+        val bookListId = user.readingList?.get(0)!!
+        val book = produceState<Resource<Item>>(initialValue = Resource.Loading()) {
+            value = homeScreenViewModel.getBookInfo(bookListId)
+        }.value
     Column {
-        Spacer(modifier = Modifier.height(10.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Reading Now ",
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.width(100.dp))
-            Text(
-                text = "View All >",
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-        }
-        Card (
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.LightGray),
-            elevation = CardDefaults.cardElevation(12.dp)
-        ){
-            Row(modifier = Modifier
-                .padding(3.dp),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                AsyncImage(model = book?.volumeInfo?.imageLinks?.smallThumbnail,
-                    contentDescription ="Book Image"
-                    , modifier = Modifier
-                        .height(150.dp)
-                        .width(100.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Reading Now ",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    color = Color.Black
                 )
-                Spacer(modifier = Modifier.width(5.dp))
-                Column {
-                    Text(text ="Currently Reading", overflow = TextOverflow.Ellipsis,
-                        color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(text = book?.volumeInfo?.title.toString(), overflow = TextOverflow.Ellipsis,
-                        color = Color.White)
+                Spacer(modifier = Modifier.width(100.dp))
+                Text(
+                    text = "View All >",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+            Card (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.LightGray),
+                elevation = CardDefaults.cardElevation(12.dp)
+            ){
+                Row(modifier = Modifier
+                    .padding(3.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    AsyncImage(model = book?.data?.volumeInfo?.imageLinks?.smallThumbnail,
+                        contentDescription ="Book Image"
+                        , modifier = Modifier
+                            .height(150.dp)
+                            .width(100.dp)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Column {
+                        Text(text ="Currently Reading", overflow = TextOverflow.Ellipsis,
+                            color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(text = book?.data?.volumeInfo?.title.toString(), overflow = TextOverflow.Ellipsis,
+                            color = Color.White)
 
-                    Text(text = "Author : ${book?.volumeInfo?.authors.toString()}",
-                        overflow = TextOverflow.Clip,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontStyle = FontStyle.Italic,
-                        color = Color.White)
+                        Text(text = "Author : ${book?.data?.volumeInfo?.authors.toString()}",
+                            overflow = TextOverflow.Clip,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontStyle = FontStyle.Italic,
+                            color = Color.White)
 
-                    Text(text = "Date : ${book?.volumeInfo?.publishedDate.toString()}",
-                        overflow = TextOverflow.Clip,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontStyle = FontStyle.Italic,
-                        color = Color.White)
+                        Text(text = "Date : ${book?.data?.volumeInfo?.publishedDate.toString()}",
+                            overflow = TextOverflow.Clip,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontStyle = FontStyle.Italic,
+                            color = Color.White)
 
+                    }
                 }
             }
         }
     }
+ }
+
+}else{
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = colorResource(id = R.color.blue))
+        }
+    }
+}
+
+fun getBooks(mutableList: MutableList<String> = mutableListOf()):MutableList<String> {
+    return mutableList
 }
 
 @Composable
@@ -295,7 +355,7 @@ fun BookItems(book : Item?,readerNavController: NavController){
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .width(120.dp)
-                  .height(150.dp)
+                    .height(150.dp)
                )
         }
         Spacer(modifier = Modifier.height(10.dp))

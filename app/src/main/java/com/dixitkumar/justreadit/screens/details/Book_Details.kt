@@ -1,14 +1,11 @@
 package com.dixitkumar.justreadit.screens.details
 
+import android.content.Intent
 import android.util.Log
-import android.widget.Space
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,54 +15,44 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Preview
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.material.icons.filled.ThumbDownOffAlt
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.ThumbUpOffAlt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.core.text.HtmlCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -74,12 +61,12 @@ import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.data.Resource
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.navigation.ReaderScreens
-import com.dixitkumar.justreadit.screens.home.BookItems
-import com.dixitkumar.justreadit.screens.home.BooksOptions
-import com.dixitkumar.justreadit.screens.home.HomeScreenViewModel
 import com.dixitkumar.justreadit.screens.home.SingleCategoryBooks
 import com.dixitkumar.justreadit.screens.login.LoginButton
-import com.google.android.play.integrity.internal.o
+import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
+import com.dixitkumar.justreadit.utils.formatString
+import com.dixitkumar.justreadit.utils.getCurrentUserId
+import com.google.android.play.integrity.internal.i
 
 @Composable
 fun Book_DetailsScreen(navController: NavController,bookId : String
@@ -91,8 +78,12 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
     }.value
 
     if(bookDetailsState.data == null){
-        Row {
-            LinearProgressIndicator()
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = colorResource(id = R.color.blue))
         }
     }else{
 
@@ -107,12 +98,38 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                 .fillMaxWidth()
                 .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start){
+                horizontalArrangement = Arrangement.SpaceBetween){
                 Icon(imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back Button",
                     tint = Color.DarkGray,
-                    modifier = Modifier.size(30.dp))
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable {
+                            if (navController.previousBackStackEntry?.destination?.route.contentEquals(
+                                    ReaderScreens.MainScreen.name
+                                )
+                            ) {
+                                navController.navigate(navController.previousBackStackEntry?.destination?.route.toString()) {
+                                    popUpTo(navController.previousBackStackEntry?.destination?.route.toString(),) {
+                                        inclusive = true
+                                    }
+                                }
+                            } else {
+                                navController.popBackStack()
+                            }
+                        })
+
+                Icon(imageVector = Icons.Default.Search,
+                    contentDescription = "Back Button",
+                    tint = Color.DarkGray,
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable {
+                            navController.navigate(route = ReaderScreens.SearchScreen.name)
+                        })
             }
+            HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+
             Row (modifier = Modifier
                 .fillMaxWidth()
                 .padding(18.dp),
@@ -159,7 +176,11 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                 }
 
             }
-            bottomRowArea()
+            val userId  = getCurrentUserId()
+            val firebaseViewModel : FirebaseViewModel = hiltViewModel()
+            bottomRowArea(viewModel = firebaseViewModel,book = bookDetailsState.data,userId =userId)
+            HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
+            bookMenu(bookDetailsState.data,viewModel = firebaseViewModel)
             HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
             bookDetailsRow(bookDetailsState.data)
             HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
@@ -178,12 +199,115 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
             if(formattedCategory.isNotEmpty() && formattedCategory.contains("null") ==false){
                 GetRelatedBooks(readerNavController = navController, searchQuery = formattedCategory,viewModel=viewModel)
             }
+
         }
     }
     }
+
+    //For Handling Back press Using Device
+    BackHandler {
+        if (navController.previousBackStackEntry?.destination?.route.contentEquals(
+                ReaderScreens.MainScreen.name
+            )
+        ) {
+            navController.navigate(navController.previousBackStackEntry?.destination?.route.toString()){
+                popUpTo(navController.previousBackStackEntry?.destination?.route.toString(),){
+                    inclusive = true
+                }
+            }
+        } else {
+            navController.popBackStack()
+        }
+    }
+
 }
 
 
+@Composable
+ fun bookMenu(book : Item?, viewModel : FirebaseViewModel){
+    var likeButtonIsClicked = remember { mutableStateOf(false) }
+    var dislikeButtonIsClicked = remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val infointent = remember { Intent(Intent.ACTION_VIEW, book?.volumeInfo?.infoLink?.toUri()) }
+    val previewintent = remember {Intent(Intent.ACTION_VIEW,book?.volumeInfo?.previewLink?.toUri())}
+    val shareIntent = remember{Intent(Intent.ACTION_SEND)}
+    shareIntent.setType("text/plain")
+    shareIntent.putExtra(Intent.EXTRA_TEXT,"${book?.volumeInfo?.title}\n Preview Link: ${book?.volumeInfo?.previewLink}")
+
+    val userId = getCurrentUserId()
+    val likedIcon = Icons.Default.ThumbUpOffAlt
+    val likedIconClicked = Icons.Default.ThumbUp
+    val dislikedIcon = Icons.Default.ThumbDownOffAlt
+    val dislikedIconClicked = Icons.Default.ThumbDown
+
+    viewModel.getDocumentReference("users","userId",userId){result->
+        if (result != null) {
+            viewModel.getField("users",result,"likedBooks"){
+               val bookList = it
+                if(bookList?.contains(book?.id.toString()) == true){
+                    likeButtonIsClicked.value = true
+                }else{
+                    likeButtonIsClicked.value = false
+                }
+            }
+        }
+    }
+
+    val color = colorResource(id = R.color.blue)
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically){
+        Icon(imageVector = if(!likeButtonIsClicked.value) likedIcon else likedIconClicked,
+            contentDescription ="Like Icon",
+            modifier = Modifier
+                .size(30.dp)
+                .clickable {
+                    AddToDatabase(
+                        viewModel = viewModel,
+                        book = book,
+                        filedName = "likedBooks",
+                        currentUserId = userId,
+                        buttonState = likeButtonIsClicked
+                    )
+                },
+            tint = if(likeButtonIsClicked.value)color else Color.Gray)
+        Icon(imageVector = if(!dislikeButtonIsClicked.value)dislikedIcon else dislikedIconClicked,
+            contentDescription ="Like Icon",
+            modifier = Modifier
+                .size(30.dp)
+                .clickable {
+                    if (!dislikeButtonIsClicked.value) {
+                        dislikeButtonIsClicked.value = true
+                    } else {
+                        dislikeButtonIsClicked.value = false
+                    }
+                },
+            tint = if(dislikeButtonIsClicked.value) color else Color.Gray)
+        Icon(imageVector = Icons.Default.Info,
+            contentDescription ="Like Icon",
+            modifier = Modifier
+                .size(30.dp)
+                .clickable { context.startActivity(infointent) },
+            tint = Color.Gray)
+        Icon(imageVector = Icons.Default.Preview,
+            contentDescription ="Like Icon",
+            modifier = Modifier
+                .size(30.dp)
+                .clickable { context.startActivity(previewintent) },
+            tint = Color.Gray)
+        Icon(imageVector = Icons.Default.Share,
+            contentDescription ="Like Icon",
+            modifier = Modifier
+                .size(30.dp)
+                .clickable {
+                    context.startActivity(shareIntent)
+                },
+            tint = Color.Gray)
+    }
+}
 
 @Composable
 fun GetRelatedBooks(readerNavController: NavController,searchQuery : String,
@@ -264,10 +388,15 @@ fun bookDetailsRow(book : Item?){
                 fontWeight = FontWeight.Bold,
                 fontSize =20.sp)
         }
-        bookSpecificDetails(categories_label = "Category", book =book?.volumeInfo?.categories.toString(), width = 30.dp)
+        val bookCategory  =book?.volumeInfo?.categories.toString().trim()
+        val formattedCategory = formatString(bookCategory,1,bookCategory.length-2,'/',',')
+
+        val author = book?.volumeInfo?.authors.toString()
+        val formattedAuthorName = formatString(author,1,author.length-2,'/',',')
+        bookSpecificDetails(categories_label = "Category", book =formattedCategory, width = 30.dp)
         bookSpecificDetails(categories_label = "Publisher", book =book?.volumeInfo?.publisher.toString(), width = 27.dp)
         bookSpecificDetails(categories_label = "Page Count", book =book?.volumeInfo?.pageCount.toString() , width = 17.dp)
-        bookSpecificDetails(categories_label = "Author", book =book?.volumeInfo?.authors.toString(), width = 40.dp)
+        bookSpecificDetails(categories_label = "Author", book =formattedAuthorName, width = 40.dp)
         bookSpecificDetails(categories_label = "Date", book = book?.volumeInfo?.publishedDate.toString(), width = 55.dp)
 
     }
@@ -295,7 +424,45 @@ fun bookSpecificDetails(categories_label : String,book :String,width : Dp = 20.d
 }
 
 @Composable
-fun bottomRowArea(){
+fun bottomRowArea(viewModel: FirebaseViewModel,book: Item?,userId : String){
+    val wishlistClicked = remember{ mutableStateOf(false) }
+    val wishListText = remember { mutableStateOf("Add to Wishlist") }
+    val startReadingClicked =  remember{ mutableStateOf(false) }
+    val readingListText = remember { mutableStateOf("Start Reading") }
+
+
+    //For Checking Whether The Book Exist Within the wishlist or not
+    viewModel.getDocumentReference("users","userId",userId){result->
+        if (result != null) {
+            viewModel.getField("users",result,"wishlist"){
+                val bookList = it
+                if(bookList?.contains(book?.id.toString()) == true){
+                    wishlistClicked.value = true
+                    wishListText.value = "Wishlisted"
+                }else{
+                    wishlistClicked.value = false
+                    wishListText.value = "Add to Wishlist"
+                }
+            }
+        }
+    }
+    //For Checking Whether The Book Exist Within the ReadingList or not
+    viewModel.getDocumentReference("users","userId",userId){result->
+        if (result != null) {
+            viewModel.getField("users",result,"readingList"){
+                val bookList = it
+                if(bookList?.contains(book?.id.toString()) == true){
+                    startReadingClicked.value = true
+                    readingListText.value = "Reading..."
+                }else{
+                    startReadingClicked.value = false
+                    readingListText.value = "Start Reading"
+                }
+            }
+        }
+    }
+
+
     Row (modifier = Modifier
         .fillMaxWidth()
         .padding(10.dp),
@@ -305,18 +472,74 @@ fun bottomRowArea(){
         LoginButton(modifier = Modifier
             .width(155.dp)
             .height(50.dp),
-            label = "Add To Wishlist",
+            label = wishListText,
             cornerRadius = 20.dp,
             color = colorResource(id = R.color.blue),
-            elevation = 5.dp)
+            elevation = 5.dp,
+            onClick = {
+                AddToDatabase(viewModel = viewModel, filedName = "wishlist",book = book, currentUserId = userId, buttonState = wishlistClicked)
+                if(!wishlistClicked.value){
+                    wishListText.value = "Wishlisted"
+                }else{
+                    wishListText.value = "Add To Wishlist"
+                }
+            })
 
         LoginButton(modifier = Modifier
             .width(155.dp)
             .height(50.dp),
-            label = "Start Reading",
+            onClick = {
+                AddToDatabase(viewModel = viewModel, filedName = "readingList",book = book, currentUserId = userId, buttonState = startReadingClicked)
+                if(!startReadingClicked.value){
+                    readingListText.value = "Reading..."
+                }else{
+                    readingListText.value = "Start Reading"
+                }
+            },
+            label =readingListText,
             cornerRadius = 20.dp,
-            color = Color.LightGray,
+            color = colorResource(id = R.color.blue),
             elevation = 5.dp)
     }
-
 }
+
+
+fun AddToDatabase(viewModel : FirebaseViewModel, book: Item?,filedName : String, currentUserId: String, buttonState : MutableState<Boolean>,onClick:()->Unit={}){
+    var isProcessing : Boolean = false
+    if(isProcessing) return
+
+    isProcessing = true
+    viewModel.getDocumentReference("users","userId",currentUserId){result->
+        if (result != null) {
+            Log.d("TAG",result)
+                if(!buttonState.value){
+                    viewModel.getField("users",result,filedName) {
+                        var contentList = it
+                        contentList?.add(book?.id.toString())
+
+                        if (contentList != null) {
+                            viewModel.updateField("users", result, filedName, contentList)
+                            buttonState.value = true
+                        }
+
+                        isProcessing = true
+                        onClick()
+                    }
+                }else {
+                    viewModel.getField("users", result, filedName) {
+                        var contentList = it
+                        contentList?.removeAll(listOf(book?.id))
+
+                        if (contentList != null) {
+                            viewModel.updateField("users", result, filedName, contentList)
+                            buttonState.value = false
+                        }
+                        isProcessing = true
+                        onClick()
+                    }
+                }
+        }
+    }
+}
+
+

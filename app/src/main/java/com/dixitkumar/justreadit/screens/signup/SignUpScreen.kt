@@ -1,5 +1,6 @@
 package com.dixitkumar.justreadit.screens.signup
 
+import android.os.Handler
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.gestures.Orientation
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -57,131 +60,209 @@ fun SignUpScreen(navController: NavController,
 }
 
 @Composable
-fun SignUpScreenUi(navController: NavController,viewModel: LoginScreenViewModel){
-    val username = remember{ mutableStateOf("")}
+fun SignUpScreenUi(navController: NavController,viewModel: LoginScreenViewModel) {
+    val username = remember { mutableStateOf("") }
+    val username_state = remember { mutableStateOf("Already Exist") }
     val email = remember { mutableStateOf("") }
+    val email_state = remember { mutableStateOf("Account Already Exist") }
     val phone = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     val confirmPassword = remember { mutableStateOf("") }
-    val showPassword_one = remember { mutableStateOf(false)}
-    val showPassword_two = remember { mutableStateOf(false)}
+    val showPassword_one = remember { mutableStateOf(false) }
+    val showPassword_two = remember { mutableStateOf(false) }
+    val password_equals = remember { mutableStateOf(true) }
 
-    var buttonClicked = true
 
-    Surface(modifier = Modifier
-        .fillMaxSize()
-    , color = Color.White) {
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(
-                state = rememberScrollState(),
-                enabled = true
-            ),
+    val buttonClicked = remember {
+        mutableStateOf(false)
+    }
+
+    val signInState = remember{ mutableStateOf("SIGN IN") }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxSize(), color = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(
+                    state = rememberScrollState(),
+                    enabled = true
+                ),
             verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally) {
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
             Spacer(modifier = Modifier.height(20.dp))
-            Row (modifier = Modifier.fillMaxWidth()){
+            Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(modifier = Modifier.width(20.dp))
-                Icon(modifier = Modifier.size(30.dp),
+                Icon(
+                    modifier = Modifier.size(30.dp),
                     imageVector = Icons.Default.ArrowBack,
                     tint = Color.Gray,
-                    contentDescription = "Back Button")
+                    contentDescription = "Back Button"
+                )
             }
             Spacer(modifier = Modifier.height(30.dp))
-            Text(text = "Let's Get Started!",
+            Text(
+                text = "Let's Get Started!",
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
-                )
+            )
             Spacer(modifier = Modifier.height(10.dp))
-            Text(text = "Create an account if you don't have one",
+            Text(
+                text = "Create an account if you don't have one",
                 color = Color.Gray
             )
             Spacer(modifier = Modifier.height(40.dp))
             InputField(
                 icon = Icons.Default.PermIdentity,
                 elevation = 20.dp,
-                textState =username,
+                textState = username,
                 keyboardType = KeyboardType.Email,
                 color = colorResource(id = R.color.blue),
-                label = "Username")
+                label = "Username",
+                onClick = {
+                    if(!viewModel.alreadyThereName.value) {
+                        viewModel.getUserName(username.value.trim())
+                    }else{
+                        viewModel.alreadyThereName.value = false
+                    }
+                }
+            )
+            if (viewModel.alreadyThereName.value) {
+                Text(
+                    text = username_state.value,
+                    fontSize = 15.sp,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
+
 
             Spacer(modifier = Modifier.height(20.dp))
             InputField(
                 icon = Icons.Default.Email,
                 elevation = 20.dp,
-                textState =email,
+                textState = email,
                 keyboardType = KeyboardType.Email,
                 color = colorResource(id = R.color.blue),
-                label = "Email")
-            Spacer(modifier = Modifier.height(20.dp))
-            InputField(
-                icon = Icons.Default.PhoneAndroid,
-                elevation = 20.dp,
-                textState =phone,
-                keyboardType = KeyboardType.Email,
-                color = colorResource(id = R.color.blue),
-                label = "Phone")
-            Spacer(modifier = Modifier.height(20.dp))
-            InputField(
-                icon = Icons.Default.LockOpen,
-                elevation = 20.dp,
-                textState =password,
-                keyboardType = KeyboardType.Email,
-                color = colorResource(id = R.color.blue),
-                label = "Password",
-                isPasswordFiled = true
-            , showPassword = showPassword_one)
-
-            Spacer(modifier = Modifier.height(20.dp))
-            InputField(
-                icon = Icons.Default.LockOpen,
-                elevation = 20.dp,
-                textState =confirmPassword,
-                keyboardType = KeyboardType.Email,
-                color = colorResource(id = R.color.blue),
-                label = "Confirm Password",
-                isPasswordFiled = true,
-                showPassword = showPassword_two)
-
-            Spacer(modifier = Modifier.height(40.dp))
-            LoginButton(label = "CREATE", cornerRadius = 40.dp,
-                modifier = Modifier
-                    .width(220.dp)
-                    .height(60.dp),
-                fontSize = 18,
-                enabled = buttonClicked,
-                color = colorResource(id = R.color.blue),
-                elevation = 20.dp,
+                label = "Email",
                 onClick = {
-                   if(email.value.trim().toString().isNotEmpty()
-                       && username.value.trim().toString().isNotEmpty()
-                       && phone.value.trim().toString().isNotEmpty()
-                       && password.value.trim().toString().isNotEmpty()
-                       && confirmPassword.value.trim().toString().isNotEmpty()
-                       ){
-                       if(password.value.trim().toString().contentEquals(confirmPassword.value.trim().toString())){
-                           viewModel.CreateUserWithEmailAndPassword(email = email.value.trim().toString(),
-                               username = username.value.trim().toString(),
-                               phone = phone.value.trim().toString(),
-                               password = password.value.trim().toString(),
-                               confirmPassword = confirmPassword.value.trim().toString()){
+                    if(!viewModel.alreadyThereEmail.value) {
+                        viewModel.getUserName(email = email.value.trim())
+                    }else{
+                        viewModel.alreadyThereEmail.value = false
+                    }
+                }
+            )
+            if (viewModel.alreadyThereEmail.value) {
+                Text(
+                    text = email_state.value,
+                    fontSize = 15.sp,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
+                Spacer(modifier = Modifier.height(20.dp))
+                InputField(
+                    icon = Icons.Default.PhoneAndroid,
+                    elevation = 20.dp,
+                    textState = phone,
+                    keyboardType = KeyboardType.Email,
+                    color = colorResource(id = R.color.blue),
+                    label = "Phone"
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                InputField(
+                    icon = Icons.Default.LockOpen,
+                    elevation = 20.dp,
+                    textState = password,
+                    keyboardType = KeyboardType.Email,
+                    color = colorResource(id = R.color.blue),
+                    label = "Password",
+                    isPasswordFiled = true, showPassword = showPassword_one
+                )
 
-                               navController.popBackStack()
-                               navController.navigate(route = ReaderScreens.MainScreen.name)
-                           }
-                       }else{
-                           Log.d("TAG","password not matched")
-                       }
-                   }
-                })
+                Spacer(modifier = Modifier.height(20.dp))
+                InputField(
+                    icon = Icons.Default.LockOpen,
+                    elevation = 20.dp,
+                    textState = confirmPassword,
+                    keyboardType = KeyboardType.Email,
+                    color = colorResource(id = R.color.blue),
+                    label = "Confirm Password",
+                    isPasswordFiled = true,
+                    showPassword = showPassword_two,
+                    onClick = {
+                        if(password.value.trim().contentEquals(confirmPassword.value.trim())==false){
+                            password_equals.value = false
+                        }else{
+                            password_equals.value = true
+                        }
+                    }
+                )
+            if (!password_equals.value) {
+                Text(
+                    text = "Password Not Matching",
+                    fontSize = 15.sp,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
 
-            Spacer(modifier = Modifier.height(40.dp))
-            loginOrSignInRow(msg = "Already have an account? ", label ="Login here" ){
-               navController.navigate(route = ReaderScreens.HomeScreen.name)
+
+                Spacer(modifier = Modifier.height(40.dp))
+                LoginButton(label = signInState, cornerRadius = 40.dp,
+                    modifier = Modifier
+                        .width(220.dp)
+                        .height(60.dp),
+                    fontSize = 18,
+                    enabled =if(!viewModel.alreadyThereEmail.value && !viewModel.alreadyThereName.value && password_equals.value) true else false,
+                    color = colorResource(id = R.color.blue),
+                    elevation = 20.dp,
+                    onClick = {
+                        if (email.value.trim().toString().isNotEmpty()
+                            && username.value.trim().toString().isNotEmpty()
+                            && phone.value.trim().toString().isNotEmpty()
+                            && password.value.trim().toString().isNotEmpty()
+                            && confirmPassword.value.trim().toString().isNotEmpty()
+                        ) {
+                            if (password.value.trim().toString()
+                                    .contentEquals(confirmPassword.value.trim().toString())
+                            ) {
+                                viewModel.getUserName(username.value.trim())
+                                viewModel.CreateUserWithEmailAndPassword(
+                                    email = email.value.trim().toString(),
+                                    username = username.value.trim().toString(),
+                                    phone = phone.value.trim().toString(),
+                                    password = password.value.trim().toString(),
+                                    confirmPassword = confirmPassword.value.trim().toString()
+                                ) {
+
+                                    navController.popBackStack()
+                                    navController.navigate(route = ReaderScreens.MainScreen.name)
+                                }
+                            } else {
+                                Log.d("TAG", "password not matched")
+                            }
+                        }
+                    })
+
+                Spacer(modifier = Modifier.height(40.dp))
+                loginOrSignInRow(msg = "Already have an account? ", label = "Login here") {
+                    navController.navigate(route = ReaderScreens.HomeScreen.name)
+                }
             }
         }
     }
-}
+
 

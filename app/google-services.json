@@ -12,7 +12,20 @@
           "package_name": "com.dixitkumar.justreadit"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "497427337422-skvhnlvf65jqb4b50i7bl78imsd91i8a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dixitkumar.justreadit",
+            "certificate_hash": "aea14073ace412a22b8756a6521dd3ddd8260ba9"
+          }
+        },
+        {
+          "client_id": "497427337422-5997gj5ufcgd71pd8fms9usg166c6i24.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAWPkXaNXHPliJMKxHc6Ua0WNJR2xCdNus"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "497427337422-5997gj5ufcgd71pd8fms9usg166c6i24.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

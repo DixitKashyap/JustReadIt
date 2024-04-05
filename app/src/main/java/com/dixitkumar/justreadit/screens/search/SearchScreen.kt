@@ -1,22 +1,20 @@
 package com.dixitkumar.justreadit.screens.search
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,20 +22,17 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -49,28 +44,26 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.navigation.ReaderScreens
-import com.dixitkumar.justreadit.screens.home.HomeScreenViewModel
+import com.dixitkumar.justreadit.utils.getBookRows_Tabs
+import com.dixitkumar.justreadit.utils.getScreenWidth
 
 @Composable
 fun SearchScreen(navController: NavController){
@@ -85,9 +78,9 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(),navControl
         mutableStateOf("")
     }
     val tabItemList = listOf(
-        "Books",
-        "Author",
-        "Category"
+        "BOOKS",
+        "AUTHORS",
+        "CATEGORY"
     )
     val selectedItem = remember{
         mutableStateOf(0)
@@ -96,12 +89,23 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(),navControl
         .fillMaxSize(), color = Color.White) {
         Column {
                 Row (modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(5.dp),
+                    .fillMaxWidth() ,
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
                     ){
-                    SearchArea(searchQuery = searchQuery){searchQuery->
+                    SearchArea(searchQuery = searchQuery,navController = navController){searchQuery->
                         viewModel.searchQuery(searchQuery)
                     }
+                    Spacer(modifier = Modifier.width(20.dp))
+                    Icon(imageVector = Icons.Default.Mic,
+                        contentDescription = "Mic Button",
+                        tint = Color.Black,
+                        modifier = Modifier
+                            .size(35.dp)
+                            .padding(3.dp)
+                            .clickable {
+
+                            })
                 }
                 TabRow(selectedTabIndex = selectedItem.value,
                     containerColor = Color.White) {
@@ -121,30 +125,84 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(),navControl
                             text = { Text(text = "${tabItemList[index]}",
                                 fontWeight = FontWeight.Bold,
                                 color = Color.DarkGray,
-                                fontSize = 16.sp)})
+                                fontSize = 14.sp)})
                     }
                 }
+                HorizontalBookOptionsRow(getBookRows_Tabs())
                 SearchedBook(list = viewModel.default_list,navController=navController)
             }
     }
 }
 
 @Composable
+fun HorizontalBookOptionsRow(list : List<String>) {
+    Row (modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically){
+        LazyRow {
+            items(list){list_item->
+                RowButton(button_text = list_item)
+            }
+        }
+    }
+}
+
+
+@Composable
+fun RowButton(button_text : String,onClick:()->Unit={}){
+    Button(onClick = {
+        onClick()
+                     },
+        modifier= Modifier
+            .height(50.dp)
+            .wrapContentWidth()
+            .padding(5.dp)
+            .border(width = 1.dp, color = Color.DarkGray, shape = RoundedCornerShape(12.dp)),
+        colors = ButtonDefaults.buttonColors(Color.White)) {
+        Text(text = "${button_text}",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.DarkGray,
+          )
+    }
+}
+
+@Composable
 fun SearchArea(
-    searchQuery :MutableState<String>,
-    onSearch :(String)->Unit = {}
+    searchQuery:MutableState<String>,
+    navController: NavController,
+    onSearch:(String)->Unit = {},
 ){
     val valid = remember(searchQuery.value) {
         searchQuery.value.trim().isNotBlank()
     }
     val keyboardController = LocalSoftwareKeyboardController.current
-    Row(modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+    val screenWidth = getScreenWidth()
+    Row(modifier = Modifier
+        .width((screenWidth / 100) * 80)
+        .border(
+            width = 2.dp,
+            color = Color.Gray,
+            shape = RoundedCornerShape(10.dp)
+        )
+        .padding(start = 12.dp, end = 12.dp)
+       ,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically){
         Icon(imageVector = Icons.Default.ArrowBack,
             contentDescription = "Back Button",
             tint = Color.DarkGray,
-            modifier = Modifier.size(27.dp))
+            modifier = Modifier
+                .size(27.dp)
+                .clickable {
+                    if (navController.previousBackStackEntry != null) {
+                        val previousRoute =
+                            navController.previousBackStackEntry?.destination?.route.toString()
+                        navController.navigate(route = navController.previousBackStackEntry?.destination?.route!!)
+                        navController.popBackStack(previousRoute, false)
+                    }
+                })
+        Spacer(modifier = Modifier.width(15.dp))
         InputFiled(valueState =searchQuery ,
             labelId ="Search here" ,
             enabled = true,
@@ -199,7 +257,7 @@ fun SearchedItem(bookDetailsState : Item?,navController: NavController){
                     color = Color.Black,
                     overflow = TextOverflow.Ellipsis)
                 Text(text = "by ${bookDetailsState?.volumeInfo?.authors}"
-                    , fontSize = 12.sp,
+                    , fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     color = colorResource(id = R.color.blue),
@@ -207,11 +265,11 @@ fun SearchedItem(bookDetailsState : Item?,navController: NavController){
 
                 Text(text = "Pages : ${bookDetailsState?.volumeInfo?.pageCount}",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
+                    fontSize = 15.sp,
                     color = colorResource(id = R.color.blue))
                 Text(text = "Published : ${bookDetailsState?.volumeInfo?.publishedDate}",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
+                    fontSize = 15.sp,
                     color = colorResource(id = R.color.blue))
                 HorizontalDivider(Modifier.width(2.dp), color = Color.LightGray)
             }
@@ -235,11 +293,9 @@ fun InputFiled(
         }
         , placeholder = { Text(text = labelId) }
         , singleLine = isSingleLine
-        , textStyle = TextStyle(fontSize = 15.sp, background = Color.White)
         ,modifier= modifier
             .height(50.dp)
-            .fillMaxWidth()
-            .border(width = 1.dp, color = Color.LightGray, shape = CircleShape),
+            .fillMaxWidth(),
         shape = CircleShape,
          colors = TextFieldDefaults.colors(
              focusedContainerColor = Color.White,
@@ -252,7 +308,14 @@ fun InputFiled(
         keyboardActions = onAction,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
         trailingIcon = {
-            Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Icon")
+            Icon(imageVector = if(valueState.value.isNotEmpty())Icons.Default.Clear else Icons.Default.Search, contentDescription = "Search Icon",
+                modifier = Modifier.clickable {
+                    if(valueState.value.isNotEmpty()){
+                        valueState.value = ""
+                    }else{
+
+                    }
+                })
         }
     )
 

@@ -1,6 +1,7 @@
 package com.dixitkumar.justreadit.screens.morebooks
 
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
@@ -28,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dixitkumar.justreadit.model.Item
+import com.dixitkumar.justreadit.navigation.ReaderScreens
 import com.dixitkumar.justreadit.screens.details.DetailsScreenViewModel
 import com.dixitkumar.justreadit.screens.home.BookItems
 
@@ -82,13 +86,25 @@ fun MoreScreenUi(moreDetails: String,list: List<Item>,navController: NavControll
     Row (modifier = Modifier
         .fillMaxWidth()
         .padding(12.dp),
-        horizontalArrangement = Arrangement.Start,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically){
         Icon(imageVector = Icons.Default.ArrowBack,
             contentDescription = "Back Button",
-            modifier = Modifier.size(30.dp),
+            modifier = Modifier.size(30.dp).clickable {
+                navController.popBackStack()
+            },
             tint = Color.Black)
+        Icon(imageVector = Icons.Default.Search,
+            contentDescription = "Back Button",
+            tint = Color.DarkGray,
+            modifier = Modifier
+                .size(30.dp)
+                .clickable {
+                    navController.navigate(route = ReaderScreens.SearchScreen.name)
+                })
+
     }
+        HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
         Row (modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp),

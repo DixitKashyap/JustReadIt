@@ -265,6 +265,9 @@ class HomeScreenViewModel @Inject constructor(private val repository: BookReposi
             }
         }
     }
+    suspend fun getBookInfo(bookId : String): Resource<Item>{
+        return  repository.getBookInfo(bookId)
+    }
     fun searchQuery(query : String){
         viewModelScope.launch {
             isLoading = true

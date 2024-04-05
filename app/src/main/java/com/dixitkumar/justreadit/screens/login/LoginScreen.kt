@@ -1,5 +1,6 @@
 package com.dixitkumar.justreadit.screens.login
 
+import android.os.Handler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -74,6 +75,7 @@ fun LoginScreenUi(
     navController: NavController,
     viewModel: LoginScreenViewModel
 ){
+    val loginState = remember{ mutableStateOf("LOG IN") }
     val username = rememberSaveable{ mutableStateOf("")}
     val password = remember {
         mutableStateOf("")
@@ -141,6 +143,15 @@ fun LoginScreenUi(
                     showPassword = showPassword,
                     isPasswordFiled = true
                 )
+                if(viewModel.error_message.value.isNotEmpty()) {
+                    Text(text = viewModel.error_message.value,
+                        fontSize = 15.sp,
+                        color = Color.Red,
+                        modifier = Modifier.padding(5.dp))
+                    Handler().postDelayed({
+                        viewModel.error_message.value = ""
+                    },4000)
+                }
 
                 Spacer(modifier = Modifier.height(20.dp))
                 Row (modifier = Modifier.fillMaxWidth(),
@@ -151,7 +162,7 @@ fun LoginScreenUi(
                 }
 
                 Spacer(modifier = Modifier.height(30.dp))
-                LoginButton(label = "LOG IN", cornerRadius = 40.dp,
+                LoginButton(label = loginState, cornerRadius = 40.dp,
                     modifier = Modifier
                         .width(200.dp)
                         .height(50.dp),
@@ -161,22 +172,12 @@ fun LoginScreenUi(
                         if(username.value.trim().isNotEmpty() && password.value.trim().isNotEmpty()){
                             viewModel.SignInWithEmailAndPassword(username.value.trim().toString(),password.value.trim().toString()){
                                 navController.popBackStack()
-                                navController.navigate(route = ReaderScreens.HomeScreen.name)
+                                navController.navigate(route = ReaderScreens.MainScreen.name)
                             }
                         }
                     })
 
                 Spacer(modifier = Modifier.height(30.dp))
-                Row (modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically){
-                    Text(text = "Or Connect Using",
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Gray)
-                }
-                Spacer(modifier = Modifier.height(30.dp))
-                MoreLoginOptions()
-
                 Spacer(modifier = Modifier.height(30.dp))
                 loginOrSignInRow(msg = "Don't hava an account? ", label ="Sign Up" ){
                     navController.navigate(route = ReaderScreens.SignupScreen.name)
@@ -218,7 +219,8 @@ fun InputField(
               mutableStateOf(true)
           },
           color : Color,
-          isPasswordFiled : Boolean = false
+          isPasswordFiled : Boolean = false,
+          onClick: () -> Unit={}
 ){
 
     //Adjusting Card According to the display width
@@ -269,6 +271,7 @@ fun InputField(
                 ), keyboardActions = KeyboardActions {
                      isFocused.value = false
                      keyboardController?.hide()
+                     onClick()
                 },
                 visualTransformation =
                 if (showPassword.value) VisualTransformation.None else PasswordVisualTransformation(),
@@ -313,7 +316,7 @@ fun InputField(
 @Composable
 fun LoginButton(
     modifier: Modifier,
-    label: String,
+    label: MutableState<String>,
     cornerRadius : Dp,
     color: Color,
     fontSize : Int = 15,
@@ -335,7 +338,7 @@ fun LoginButton(
             shape = RoundedCornerShape(cornerRadius),
             colors = ButtonDefaults.buttonColors(containerColor = color)
         ) {
-            Text(text = "$label",
+            Text(text = "${label.value}",
                 fontSize = fontSize.sp,
                 fontWeight =fontWeight,
                 color = Color.White
@@ -345,29 +348,4 @@ fun LoginButton(
 }
 
 
-@Composable
-fun MoreLoginOptions(){
-Row(modifier = Modifier.fillMaxWidth()
-, horizontalArrangement = Arrangement.Center){
-
-        LoginButton(modifier = Modifier
-            .padding(start = 20.dp, end = 10.dp)
-            .height(50.dp)
-            .width(150.dp),
-            label = "Facebook",
-            onClick = { /*TODO*/ },
-            cornerRadius = 20.dp,
-            color = colorResource(id = R.color.dark_blue),
-            elevation = 0.dp)
-        LoginButton(modifier = Modifier
-            .padding(start = 20.dp, end = 10.dp)
-            .height(50.dp)
-            .width(150.dp),
-            label = "Google",
-            onClick = { /*TODO*/ },
-            cornerRadius = 20.dp,
-            color = colorResource(id = R.color.red),
-            elevation = 0.dp)
-}
-}
 

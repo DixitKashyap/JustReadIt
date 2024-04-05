@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.play.services.auth)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -99,6 +100,8 @@ dependencies {
     implementation  ("com.squareup.retrofit2:converter-gson:2.9.0")
 
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    
 }
 kapt{
     correctErrorTypes = true

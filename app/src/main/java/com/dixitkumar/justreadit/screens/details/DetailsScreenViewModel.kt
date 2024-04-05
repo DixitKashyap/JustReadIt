@@ -11,8 +11,12 @@ import androidx.lifecycle.viewModelScope
 import com.dixitkumar.justreadit.data.Resource
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.repository.BookRepository
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,6 +28,8 @@ class DetailsScreenViewModel @Inject constructor(private val repository: BookRep
 
     var isLoading_author_books = mutableStateOf(false)
     var isLoading_relatedBooks = mutableStateOf(false)
+
+
     suspend fun getBookInfo(bookId : String): Resource<Item>{
         return  repository.getBookInfo(bookId)
     }
