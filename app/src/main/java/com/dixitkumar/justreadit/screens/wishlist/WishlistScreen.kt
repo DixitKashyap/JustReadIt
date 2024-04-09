@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.dixitkumar.justreadit.screens.home.BookItems
 import com.dixitkumar.justreadit.screens.search.SearchScreenViewModel
 import com.dixitkumar.justreadit.screens.search.SearchedItem
 
@@ -47,7 +46,7 @@ fun WishlistScreenUi(navController: NavController,viewModel: SearchScreenViewMod
             LazyColumn {
                 items(bookstate){
                     SearchedItem(navController = navController,
-                        bookDetailsState = it)
+                        book = it)
                 }
             }
         }

@@ -5,6 +5,9 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarData
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import com.dixitkumar.justreadit.model.Item
+import com.dixitkumar.justreadit.model.MUser
+import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
@@ -25,4 +28,21 @@ fun firebaseErrorMessage(errorCode : String):String{
 
 fun getCurrentUserId() : String{
     return FirebaseAuth.getInstance().currentUser?.uid.toString()
+}
+
+fun GetFirebaseUserData(viewModel: FirebaseViewModel) : MUser?{
+    val currentUser = getCurrentUserId()
+    val bookList: MutableList<Item> = mutableListOf()
+
+    if (!viewModel.data.value.data.isNullOrEmpty()) {
+        Log.d("TAG", "USER ID ${currentUser.toString()}")
+        val listUser = viewModel.data.value?.data!!.toList().filter {
+            it.userId.toString().contentEquals(currentUser)
+        }
+        if (listUser.isNotEmpty()) {
+            val user = listUser[0]
+            return user
+        }
+    }
+    return null
 }

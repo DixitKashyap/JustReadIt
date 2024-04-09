@@ -2,6 +2,7 @@ package com.dixitkumar.justreadit.repository
 
 import android.util.Log
 import com.dixitkumar.justreadit.data.DataOrException
+import com.dixitkumar.justreadit.model.MBook
 import com.dixitkumar.justreadit.model.MUser
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
@@ -10,7 +11,7 @@ import javax.inject.Inject
 
 class FireRepository @Inject constructor(private val queryBook : Query){
 
-    suspend fun getAllBooksFromDatabase(): DataOrException<List<MUser>, Boolean, Exception> {
+    suspend fun getAllUsersFromDatabase(): DataOrException<List<MUser>, Boolean, Exception> {
         val dataOrException = DataOrException<List<MUser>,Boolean,Exception>()
 
         try{

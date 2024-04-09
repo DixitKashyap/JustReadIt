@@ -64,7 +64,6 @@ class LoginScreenViewModel : ViewModel() {
             phone = phone.toString(),
             email = email,
             likedBooks = emptyList(),
-            dislikedBook = emptyList(),
             readingList = emptyList(),
             wishlist = emptyList()
         )

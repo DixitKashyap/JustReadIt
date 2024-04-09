@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,32 +16,45 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Comment
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Preview
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ThumbDown
-import androidx.compose.material.icons.filled.ThumbDownOffAlt
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.ThumbUpOffAlt
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Comment
+import androidx.compose.material.icons.outlined.ModeComment
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.rounded.Comment
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +63,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,6 +74,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.data.Resource
+import com.dixitkumar.justreadit.model.Comments
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.navigation.ReaderScreens
 import com.dixitkumar.justreadit.screens.home.SingleCategoryBooks
@@ -66,7 +82,7 @@ import com.dixitkumar.justreadit.screens.login.LoginButton
 import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
 import com.dixitkumar.justreadit.utils.formatString
 import com.dixitkumar.justreadit.utils.getCurrentUserId
-import com.google.android.play.integrity.internal.i
+import kotlinx.coroutines.launch
 
 @Composable
 fun Book_DetailsScreen(navController: NavController,bookId : String
@@ -186,6 +202,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
             HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
             bookDescription(book = bookDetailsState.data?.volumeInfo?.description.toString())
             Spacer(modifier = Modifier.height(10.dp))
+
             HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
 
             val author_name = bookDetailsState.data?.volumeInfo?.authors?.get(0).toString()
@@ -199,6 +216,8 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
             if(formattedCategory.isNotEmpty() && formattedCategory.contains("null") ==false){
                 GetRelatedBooks(readerNavController = navController, searchQuery = formattedCategory,viewModel=viewModel)
             }
+            HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
+            CommentButtonUi()
 
         }
     }
@@ -226,8 +245,6 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
 @Composable
  fun bookMenu(book : Item?, viewModel : FirebaseViewModel){
     var likeButtonIsClicked = remember { mutableStateOf(false) }
-    var dislikeButtonIsClicked = remember { mutableStateOf(false) }
-
     val context = LocalContext.current
     val infointent = remember { Intent(Intent.ACTION_VIEW, book?.volumeInfo?.infoLink?.toUri()) }
     val previewintent = remember {Intent(Intent.ACTION_VIEW,book?.volumeInfo?.previewLink?.toUri())}
@@ -238,12 +255,11 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
     val userId = getCurrentUserId()
     val likedIcon = Icons.Default.ThumbUpOffAlt
     val likedIconClicked = Icons.Default.ThumbUp
-    val dislikedIcon = Icons.Default.ThumbDownOffAlt
-    val dislikedIconClicked = Icons.Default.ThumbDown
 
+   //Updating The Like Button If The Open Book Has Already Been Liked
     viewModel.getDocumentReference("users","userId",userId){result->
         if (result != null) {
-            viewModel.getField("users",result,"likedBooks"){
+            viewModel.getFieldAsList("users",result,"likedBooks"){
                val bookList = it
                 if(bookList?.contains(book?.id.toString()) == true){
                     likeButtonIsClicked.value = true
@@ -257,35 +273,31 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
     val color = colorResource(id = R.color.blue)
     Row(modifier = Modifier
         .fillMaxWidth()
-        .padding(12.dp),
+        .padding(12.dp, 12.dp, 0.dp, 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically){
-        Icon(imageVector = if(!likeButtonIsClicked.value) likedIcon else likedIconClicked,
-            contentDescription ="Like Icon",
+            Icon(imageVector = if(!likeButtonIsClicked.value) likedIcon else likedIconClicked,
+                contentDescription ="Like Icon",
+                modifier = Modifier
+                    .size(30.dp)
+                    .clickable {
+                        AddToDatabase(
+                            viewModel = viewModel,
+                            book = book,
+                            filedName = "likedBooks",
+                            currentUserId = userId,
+                            buttonState = likeButtonIsClicked
+                        )
+                    },
+                tint = if(likeButtonIsClicked.value)color else Color.Gray)
+        Icon(imageVector = Icons.AutoMirrored.Outlined.Comment,
+            contentDescription = "Comments Button",
+            tint = Color.Gray,
             modifier = Modifier
                 .size(30.dp)
                 .clickable {
-                    AddToDatabase(
-                        viewModel = viewModel,
-                        book = book,
-                        filedName = "likedBooks",
-                        currentUserId = userId,
-                        buttonState = likeButtonIsClicked
-                    )
-                },
-            tint = if(likeButtonIsClicked.value)color else Color.Gray)
-        Icon(imageVector = if(!dislikeButtonIsClicked.value)dislikedIcon else dislikedIconClicked,
-            contentDescription ="Like Icon",
-            modifier = Modifier
-                .size(30.dp)
-                .clickable {
-                    if (!dislikeButtonIsClicked.value) {
-                        dislikeButtonIsClicked.value = true
-                    } else {
-                        dislikeButtonIsClicked.value = false
-                    }
-                },
-            tint = if(dislikeButtonIsClicked.value) color else Color.Gray)
+
+                })
         Icon(imageVector = Icons.Default.Info,
             contentDescription ="Like Icon",
             modifier = Modifier
@@ -307,6 +319,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                 },
             tint = Color.Gray)
     }
+
 }
 
 @Composable
@@ -434,7 +447,7 @@ fun bottomRowArea(viewModel: FirebaseViewModel,book: Item?,userId : String){
     //For Checking Whether The Book Exist Within the wishlist or not
     viewModel.getDocumentReference("users","userId",userId){result->
         if (result != null) {
-            viewModel.getField("users",result,"wishlist"){
+            viewModel.getFieldAsList("users",result,"wishlist"){
                 val bookList = it
                 if(bookList?.contains(book?.id.toString()) == true){
                     wishlistClicked.value = true
@@ -449,7 +462,7 @@ fun bottomRowArea(viewModel: FirebaseViewModel,book: Item?,userId : String){
     //For Checking Whether The Book Exist Within the ReadingList or not
     viewModel.getDocumentReference("users","userId",userId){result->
         if (result != null) {
-            viewModel.getField("users",result,"readingList"){
+            viewModel.getFieldAsList("users",result,"readingList"){
                 val bookList = it
                 if(bookList?.contains(book?.id.toString()) == true){
                     startReadingClicked.value = true
@@ -513,7 +526,7 @@ fun AddToDatabase(viewModel : FirebaseViewModel, book: Item?,filedName : String,
         if (result != null) {
             Log.d("TAG",result)
                 if(!buttonState.value){
-                    viewModel.getField("users",result,filedName) {
+                    viewModel.getFieldAsList("users",result,filedName) {
                         var contentList = it
                         contentList?.add(book?.id.toString())
 
@@ -525,8 +538,9 @@ fun AddToDatabase(viewModel : FirebaseViewModel, book: Item?,filedName : String,
                         isProcessing = true
                         onClick()
                     }
+
                 }else {
-                    viewModel.getField("users", result, filedName) {
+                    viewModel.getFieldAsList("users", result, filedName) {
                         var contentList = it
                         contentList?.removeAll(listOf(book?.id))
 
@@ -542,4 +556,74 @@ fun AddToDatabase(viewModel : FirebaseViewModel, book: Item?,filedName : String,
     }
 }
 
+@Composable
+fun CommentButtonUi(onClick: () -> Unit={}){
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .clickable { onClick() }) {
+        Row(modifier = Modifier.padding(5.dp)
+            ,horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically) {
+            Icon(imageVector = Icons.Outlined.ModeComment,
+                contentDescription = "Comment Image",
+                tint = Color.DarkGray,
+                modifier = Modifier.padding(8.dp))
+            Text(text = "Comments",
+                color = Color.DarkGray,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold)
+            Text(text = "    ....",
+                color = Color.Gray,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold)
+        }
+        Row(horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically) {
+            Icon(imageVector = Icons.Filled.AccountCircle,
+                contentDescription = "User Icon",
+                tint = Color.DarkGray,
+                modifier = Modifier
+                    .size(49.dp)
+                    .padding(8.dp)
+                )
+            Text(modifier = Modifier
+                .background(color = Color.LightGray, shape = RoundedCornerShape(8.dp))
+                .padding(10.dp),
+                text = "Hey, You Can Add Comments Here ....",
+                color = Color.Gray,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Normal)
+        }
+    }
+}
 
+
+@Composable
+fun OtherUserComments(content : String){
+    Row(modifier = Modifier.padding(10.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.Top){
+        Icon(imageVector = Icons.Filled.AccountCircle,
+            contentDescription = "User Icon",
+            tint = Color.DarkGray,
+            modifier = Modifier
+                .size(49.dp)
+                .padding(8.dp)
+        )
+        Column{
+            Text(modifier = Modifier
+                .padding(10.dp),
+                text = "Ravi Shankar Mishra",
+                color = Color.Gray,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal)
+            Text(modifier = Modifier
+                .background(color = Color.LightGray, shape = RoundedCornerShape(8.dp))
+                .padding(10.dp),
+            text = "${content}",
+            color = Color.Gray,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Normal)
+        }
+    }
+}

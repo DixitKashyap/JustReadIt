@@ -16,15 +16,49 @@ import javax.inject.Inject
 @HiltViewModel
 class SearchScreenViewModel@Inject constructor(private val repository: BookRepository) : ViewModel() {
     var default_list : List<Item> by mutableStateOf(listOf())
+    var suggestedList : List<Item> by mutableStateOf(listOf())
     var isLoading : Boolean by mutableStateOf(true)
     init {
         loadBooks()
     }
-
+    suspend fun getBookInfo(bookId : String): Resource<Item>{
+        return  repository.getBookInfo(bookId)
+    }
     private fun loadBooks(){
         searchQuery("Flutter")
+        suggested_book("query=Flutter")
     }
     fun searchQuery(query : String){
+        viewModelScope.launch {
+            isLoading = true
+            if (query.isEmpty()) {
+                return@launch
+            }
+
+            try {
+                when (val response = repository.getBooks(query)) {
+                    is Resource.Success -> {
+                        default_list = response.data!!
+                        if (default_list.isNotEmpty()) isLoading = false
+                    }
+
+                    is Resource.Error -> {
+                        isLoading = false
+                        Log.e("TAG", "Book Searching : Failed Getting Books")
+                    }
+
+                    else -> {
+                        isLoading = false
+                        Log.d("TAG", query)
+                    }
+                }
+            } catch (e: Exception) {
+                isLoading = false
+                Log.d("TAG", "searchBooks : ${e.message.toString()}")
+            }
+        }
+}
+    fun suggested_book(query : String){
         viewModelScope.launch {
             isLoading = true
             if(query.isEmpty()){
@@ -32,9 +66,9 @@ class SearchScreenViewModel@Inject constructor(private val repository: BookRepos
             }
 
             try{
-                when(val response = repository.getBooks(query)){
+                when(val response = repository.getBooks("query=${query}")){
                     is Resource.Success ->{
-                        default_list = response.data!!
+                        suggestedList = response.data!!
                         if(default_list.isNotEmpty()) isLoading = false
                     }
                     is Resource.Error ->{
@@ -52,7 +86,5 @@ class SearchScreenViewModel@Inject constructor(private val repository: BookRepos
             }
         }
     }
-
-
 }
 

@@ -1,5 +1,8 @@
 package com.dixitkumar.justreadit.screens.search
 
+import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,23 +15,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -44,35 +46,41 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.toLowerCase
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.navigation.ReaderScreens
-import com.dixitkumar.justreadit.utils.getBookRows_Tabs
+import com.dixitkumar.justreadit.screens.details.AddToDatabase
+import com.dixitkumar.justreadit.screens.home.BookItems
+import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
+import com.dixitkumar.justreadit.utils.GetFirebaseUserData
+import com.dixitkumar.justreadit.utils.getCurrentUserId
 import com.dixitkumar.justreadit.utils.getScreenWidth
 
 @Composable
 fun SearchScreen(navController: NavController){
-    SearchScreenUi(navController=navController)
+        SearchScreenUi(navController=navController)
 }
 
 
 @Composable
-fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(),navController: NavController){
+fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(), firebaseViewModel: FirebaseViewModel= hiltViewModel(), navController: NavController){
 
     val searchQuery = rememberSaveable{
         mutableStateOf("")
@@ -85,9 +93,10 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(),navControl
     val selectedItem = remember{
         mutableStateOf(0)
     }
+    val recentSearchList = GetFirebaseUserData(viewModel= firebaseViewModel)?.recentSearched
     Surface(modifier = Modifier
         .fillMaxSize(), color = Color.White) {
-        Column {
+        Column{
                 Row (modifier = Modifier
                     .fillMaxWidth() ,
                     horizontalArrangement = Arrangement.Start,
@@ -95,17 +104,10 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(),navControl
                     ){
                     SearchArea(searchQuery = searchQuery,navController = navController){searchQuery->
                         viewModel.searchQuery(searchQuery)
-                    }
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Icon(imageVector = Icons.Default.Mic,
-                        contentDescription = "Mic Button",
-                        tint = Color.Black,
-                        modifier = Modifier
-                            .size(35.dp)
-                            .padding(3.dp)
-                            .clickable {
+                        viewModel.suggested_book(searchQuery)
+                        SearchQueryToDb(query = searchQuery,viewModel= firebaseViewModel)
 
-                            })
+                    }
                 }
                 TabRow(selectedTabIndex = selectedItem.value,
                     containerColor = Color.White) {
@@ -115,6 +117,8 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(),navControl
                                      selectedItem.value = index
                                 if(selectedItem.value == 0){
                                     viewModel.searchQuery(searchQuery.value)
+                                    viewModel.suggested_book(searchQuery.value)
+                                    //Adding Search Query TO Db
                                 }
                                 else if(selectedItem.value == 1){
                                     viewModel.searchQuery("author=${searchQuery.value}")
@@ -128,45 +132,41 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(),navControl
                                 fontSize = 14.sp)})
                     }
                 }
-                HorizontalBookOptionsRow(getBookRows_Tabs())
-                SearchedBook(list = viewModel.default_list,navController=navController)
+
+                if(viewModel.default_list.isNotEmpty() && viewModel.suggestedList.isNotEmpty() && recentSearchList!=null) {
+                    SearchedBook(list1 = viewModel.default_list,list2 = viewModel.suggestedList, list3 = recentSearchList, navController = navController)
+                }
             }
     }
 }
+fun SearchQueryToDb(query : String,viewModel: FirebaseViewModel){
+    val current = getCurrentUserId()
+    Log.d("TAG","Search Current user id"+current)
 
-@Composable
-fun HorizontalBookOptionsRow(list : List<String>) {
-    Row (modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically){
-        LazyRow {
-            items(list){list_item->
-                RowButton(button_text = list_item)
+    viewModel.getDocumentReference("users","userId", current){documentRef->
+        Log.d("TAG","Documnet Ref"+documentRef.toString())
+
+        viewModel.getFieldAsList("users",documentRef.toString(),"recentSearched"){
+            var contentList = it
+            Log.d("SEARCH",contentList.toString())
+            if(contentList==null){
+                contentList = mutableListOf("")
+                contentList?.add(query)
+                viewModel.updateField("users",documentRef.toString(),"recentSearched",contentList)
+            }
+            else if(!contentList.isNullOrEmpty()&&contentList?.size!! <=10){
+                contentList?.add(query)
+                viewModel.updateField("users",documentRef.toString(),"recentSearched",contentList)
+            }else if(!contentList.isNullOrEmpty() && contentList.size>=10){
+                contentList.removeAt(0)
+                contentList.add(query)
+                viewModel.updateField("users",documentRef.toString(),"recentSearched",contentList)
+
+
             }
         }
     }
 }
-
-
-@Composable
-fun RowButton(button_text : String,onClick:()->Unit={}){
-    Button(onClick = {
-        onClick()
-                     },
-        modifier= Modifier
-            .height(50.dp)
-            .wrapContentWidth()
-            .padding(5.dp)
-            .border(width = 1.dp, color = Color.DarkGray, shape = RoundedCornerShape(12.dp)),
-        colors = ButtonDefaults.buttonColors(Color.White)) {
-        Text(text = "${button_text}",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.DarkGray,
-          )
-    }
-}
-
 @Composable
 fun SearchArea(
     searchQuery:MutableState<String>,
@@ -179,7 +179,7 @@ fun SearchArea(
     val keyboardController = LocalSoftwareKeyboardController.current
     val screenWidth = getScreenWidth()
     Row(modifier = Modifier
-        .width((screenWidth / 100) * 80)
+        .fillMaxWidth()
         .border(
             width = 2.dp,
             color = Color.Gray,
@@ -195,11 +195,17 @@ fun SearchArea(
             modifier = Modifier
                 .size(27.dp)
                 .clickable {
-                    if (navController.previousBackStackEntry != null) {
-                        val previousRoute =
-                            navController.previousBackStackEntry?.destination?.route.toString()
-                        navController.navigate(route = navController.previousBackStackEntry?.destination?.route!!)
-                        navController.popBackStack(previousRoute, false)
+                    if (navController.previousBackStackEntry?.destination?.route.contentEquals(
+                            ReaderScreens.MainScreen.name
+                        )
+                    ) {
+                        navController.navigate(navController.previousBackStackEntry?.destination?.route.toString()) {
+                            popUpTo(navController.previousBackStackEntry?.destination?.route.toString(),) {
+                                inclusive = true
+                            }
+                        }
+                    } else {
+                        navController.popBackStack()
                     }
                 })
         Spacer(modifier = Modifier.width(15.dp))
@@ -213,69 +219,160 @@ fun SearchArea(
                 keyboardController?.hide()
             })
     }
+
+    //Handling Back Stack
+    BackHandler {
+        if (navController.previousBackStackEntry?.destination?.route.contentEquals(
+                ReaderScreens.MainScreen.name
+            )
+        ) {
+            navController.navigate(navController.previousBackStackEntry?.destination?.route.toString()) {
+                popUpTo(navController.previousBackStackEntry?.destination?.route.toString(),) {
+                    inclusive = true
+                }
+            }
+        } else {
+            navController.popBackStack()
+        }
+    }
 }
 
+
 @Composable
-fun SearchedBook(list :List<Item>,navController: NavController){
-    if(list.isEmpty()){
+fun SearchedBook(list1 :List<Item>,list2:List<Item>,list3 : List<String>? = null,navController: NavController){
+    if(list1.isEmpty() && list2.isEmpty()){
         Column(modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
             Text(text = "No Book Found")
         }
     }else {
-        LazyColumn {
-            items(list) {
-                SearchedItem(bookDetailsState = it, navController =navController )
+
+        Column(modifier = Modifier
+            .wrapContentHeight()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, top = 12.dp, bottom = 5.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Top Searches",
+                    fontSize = 21.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
             }
+            LazyRow(modifier = Modifier.padding(top = 12.dp, bottom = 12.dp)) {
+                items(list1) {
+                    BookItems(book = it, readerNavController = navController)
+                }
+            }
+
+            LazyColumn(modifier = Modifier.padding(top = 10.dp, bottom = 12.dp)) {
+                item {
+                    Text(
+                        text = "Suggested Books",
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(start = 12.dp,top=12.dp, bottom = 5.dp)
+                    )
+                }
+                items(list2) {
+                    SearchedItem(book = it, navController = navController)
+                }
+
+                if(list3!=null){
+                    item {
+                        Text(
+                            text = "Recently Searched",
+                            fontSize = 21.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(start = 12.dp,top=12.dp, bottom = 5.dp)
+                        )
+                    }
+
+                    items(list3){
+                        recentSearchItems(it)
+                    }
+                }
+
+            }
+
         }
     }
 }
 @Composable
-fun SearchedItem(bookDetailsState : Item?,navController: NavController){
+fun SearchedItem(book : Item?, navController: NavController){
     Row(modifier = Modifier
         .fillMaxWidth()
         .padding(5.dp)
         .clickable {
-            navController.navigate(route = ReaderScreens.DetailsScreen.name + "/${bookDetailsState?.id}")
+            navController.navigate(route = ReaderScreens.DetailsScreen.name + "/${book?.id}")
         },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start){
-        AsyncImage(model = bookDetailsState?.volumeInfo?.imageLinks?.thumbnail,
-            contentDescription = "Book Image", placeholder = painterResource(id = R.drawable.splash_image),
-            modifier = Modifier
-                .width(80.dp)
-                .height(120.dp),
-            contentScale = ContentScale.Crop)
+      Card(
+            modifier = Modifier.padding(start = 8.dp, end = 8.dp),
+            colors = CardDefaults.cardColors(Color.White),
+            elevation = CardDefaults.cardElevation(6.dp),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+          val bookImageUrl = book?.volumeInfo?.imageLinks?.thumbnail
+
+          Image(
+              painter = if(bookImageUrl.isNullOrEmpty())
+                  painterResource(id = R.drawable.no_img)else rememberAsyncImagePainter(
+                  model = bookImageUrl
+              ),
+              contentDescription = "Book Image",
+              contentScale = ContentScale.Crop,
+              modifier = Modifier
+                  .width(60.dp)
+                  .height(60.dp)
+          )
+        }
             Column (modifier = Modifier
-                .padding(start = 12.dp, bottom = 12.dp)
-                .height(115.dp)){
-                Text(text = bookDetailsState?.volumeInfo?.title.toString(),
+                .padding(12.dp)
+                .height(65.dp), horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Top){
+                Text(text = book?.volumeInfo?.title.toString(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    maxLines = 3,
+                    maxLines = 1,
                     color = Color.Black,
                     overflow = TextOverflow.Ellipsis)
-                Text(text = "by ${bookDetailsState?.volumeInfo?.authors}"
+                Text(text = "by ${book?.volumeInfo?.authors}"
                     , fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    color = colorResource(id = R.color.blue),
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    color = Color.DarkGray,
                     overflow = TextOverflow.Ellipsis)
-
-                Text(text = "Pages : ${bookDetailsState?.volumeInfo?.pageCount}",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = colorResource(id = R.color.blue))
-                Text(text = "Published : ${bookDetailsState?.volumeInfo?.publishedDate}",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = colorResource(id = R.color.blue))
-                HorizontalDivider(Modifier.width(2.dp), color = Color.LightGray)
             }
     }
 }
 
+@Composable
+fun recentSearchItems(query: String,viewModel: SearchScreenViewModel = hiltViewModel()){
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(12.dp).clickable {
+            viewModel.searchQuery(query)
+            viewModel.suggested_book(query)
+        },
+        horizontalArrangement = Arrangement.Start){
+        Icon(imageVector = Icons.Default.Search,
+            contentDescription = "SearchIcons",
+            tint = Color.DarkGray,
+            modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(20.dp))
+        Text(text = "${query.toLowerCase()}",
+            fontFamily = FontFamily.SansSerif,
+            color = Color.DarkGray)
+    }
+}
 @Composable
 fun InputFiled(
     modifier: Modifier = Modifier,
@@ -294,8 +391,8 @@ fun InputFiled(
         , placeholder = { Text(text = labelId) }
         , singleLine = isSingleLine
         ,modifier= modifier
-            .height(50.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .height(60.dp),
         shape = CircleShape,
          colors = TextFieldDefaults.colors(
              focusedContainerColor = Color.White,

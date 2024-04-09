@@ -12,7 +12,6 @@ data class MUser(
     val wishlist : List<String>? = null,
     val recentSearched : List<String>? = null,
     val likedBooks : List<String>? = null,
-    val dislikedBook : List<String>? = null
 ){
     fun toMap(): MutableMap<String,Any?>{
         return mutableMapOf(
