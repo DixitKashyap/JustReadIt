@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.dixitkumar.justreadit.data.Resource
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.repository.BookRepository
+import com.dixitkumar.justreadit.repository.FireBaseBookRepository
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore

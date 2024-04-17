@@ -9,7 +9,7 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class FireRepository @Inject constructor(private val queryBook : Query){
+class FireBaseUserRepository @Inject constructor(private val queryBook : Query){
 
     suspend fun getAllUsersFromDatabase(): DataOrException<List<MUser>, Boolean, Exception> {
         val dataOrException = DataOrException<List<MUser>,Boolean,Exception>()

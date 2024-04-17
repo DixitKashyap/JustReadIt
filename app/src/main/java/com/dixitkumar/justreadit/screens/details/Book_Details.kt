@@ -3,10 +3,12 @@ package com.dixitkumar.justreadit.screens.details
 import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,56 +16,56 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Comment
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Preview
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.ThumbUpOffAlt
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.Comment
-import androidx.compose.material.icons.outlined.ModeComment
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.rounded.Comment
-import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,18 +73,21 @@ import androidx.core.net.toUri
 import androidx.core.text.HtmlCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
+import com.dixitkumar.justreadit.Componenets.RatingBar
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.data.Resource
 import com.dixitkumar.justreadit.model.Comments
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.navigation.ReaderScreens
 import com.dixitkumar.justreadit.screens.home.SingleCategoryBooks
-import com.dixitkumar.justreadit.screens.login.LoginButton
 import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
 import com.dixitkumar.justreadit.utils.formatString
 import com.dixitkumar.justreadit.utils.getCurrentUserId
-import kotlinx.coroutines.launch
+import com.dixitkumar.justreadit.utils.getScreenWidth
+import java.text.SimpleDateFormat
+import java.util.Date
+
 
 @Composable
 fun Book_DetailsScreen(navController: NavController,bookId : String
@@ -92,6 +97,17 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
     val bookDetailsState = produceState<Resource<Item>>(initialValue =Resource.Loading() ) {
         value = viewModel.getBookInfo(bookId)
     }.value
+
+    val context = LocalContext.current
+    val sdf = SimpleDateFormat("dd-MM-yyyy")
+    val currentDate = sdf.format(Date())
+    val startedReadingStateText = remember{mutableStateOf("Started At...")}
+    var startedReadingState = false
+    val finishedReadingStateText = remember{ mutableStateOf("Finished At...") }
+    var finishedReadingState = false
+    val userId  = getCurrentUserId()
+    val firebaseViewModel : FirebaseViewModel = hiltViewModel()
+
 
     if(bookDetailsState.data == null){
         Column(modifier = Modifier
@@ -111,6 +127,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
             .background(Color.White)
             .verticalScroll(rememberScrollState())) {
             Row (modifier = Modifier
+                .background(Color.White)
                 .fillMaxWidth()
                 .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -121,18 +138,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                     modifier = Modifier
                         .size(30.dp)
                         .clickable {
-                            if (navController.previousBackStackEntry?.destination?.route.contentEquals(
-                                    ReaderScreens.MainScreen.name
-                                )
-                            ) {
-                                navController.navigate(navController.previousBackStackEntry?.destination?.route.toString()) {
-                                    popUpTo(navController.previousBackStackEntry?.destination?.route.toString(),) {
-                                        inclusive = true
-                                    }
-                                }
-                            } else {
-                                navController.popBackStack()
-                            }
+                            navController.popBackStack()
                         })
 
                 Icon(imageVector = Icons.Default.Search,
@@ -144,123 +150,306 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                             navController.navigate(route = ReaderScreens.SearchScreen.name)
                         })
             }
-            HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+            HorizontalDivider(thickness = 2.dp, color = Color.LightGray)
 
             Row (modifier = Modifier
+                .background(Color.White)
                 .fillMaxWidth()
                 .padding(18.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.Top){
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically) {
 
-                Card(modifier = Modifier
-                    .width(150.dp)
-                    .height(220.dp)
-                    .verticalScroll(rememberScrollState()),
+                Card(
+                    modifier = Modifier
+                        .width(180.dp)
+                        .height(270.dp)
+                        .verticalScroll(rememberScrollState()),
                     elevation = CardDefaults.cardElevation(6.dp),
-                    colors = CardDefaults.cardColors(Color.White)) {
-                    AsyncImage(model = bookDetailsState.data?.volumeInfo?.imageLinks?.thumbnail,
-                        contentDescription = "Book Thumbnail",
-                        modifier = Modifier
-                            .width(150.dp)
-                            .height(220.dp))
-                }
-                Column (modifier = Modifier
-                    .padding(12.dp)
-                    .height(170.dp)){
-                    Text(text = bookDetailsState.data?.volumeInfo?.title.toString(),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                        maxLines = 3,
-                        color = Color.Black,
-                        overflow = TextOverflow.Ellipsis)
-                    Text(text = "by ${bookDetailsState.data?.volumeInfo?.authors}"
-                    , fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        color = colorResource(id = R.color.blue),
-                        overflow = TextOverflow.Ellipsis)
+                    colors = CardDefaults.cardColors(Color.White)
+                ) {
+                    val bookImageUrl = bookDetailsState.data?.volumeInfo?.imageLinks?.thumbnail
 
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(text = "Pages : ${bookDetailsState.data?.volumeInfo?.pageCount}",
+                    Image(
+                        painter =  if(bookImageUrl.isNullOrEmpty())
+                            painterResource(id = R.drawable.no_img)else rememberAsyncImagePainter(
+                            model = bookImageUrl
+                        ),
+                        contentDescription = "Book Image",
+                        modifier = Modifier
+                            .width(180.dp)
+                            .height(270.dp)
+                    )
+                }
+            }
+            //Book Title And Author
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = bookDetailsState.data?.volumeInfo?.title.toString(),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 30.sp,
+                    maxLines = 3,
+                    color = Color.Black,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 34.sp,
+                    modifier = Modifier.padding(start = 2.dp, top = 5.dp, bottom = 15.dp)
+                )
+                Text(
+                    text = "by ${bookDetailsState.data?.volumeInfo?.authors}", fontSize = 17.sp,
+                    fontWeight = FontWeight.W500,
+                    maxLines = 2,
+                    color = Color.Black,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+                val ratingVal = remember { mutableStateOf(0) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    RatingBar(
+                        modifier = Modifier.weight(1f),
+                        rating = ratingVal.value,
+                        enabled = false
+                    ) {
+                        ratingVal.value = it
+                    }
+                    Spacer(modifier = Modifier.width((getScreenWidth() / 100) * 35))
+                    Text(
+                        text = "${bookDetailsState.data?.volumeInfo?.pageCount} pages",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = colorResource(id = R.color.blue).copy(0.5f), modifier = Modifier.padding(top = 6.dp))
-                    Text(text = "Published : ${bookDetailsState.data?.volumeInfo?.publishedDate}",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = colorResource(id = R.color.blue).copy(0.5f), modifier = Modifier.padding(top = 6.dp))
+                        color = Color.DarkGray, modifier = Modifier
+                            .padding(top = 6.dp)
+                            .weight(1f)
+                            .wrapContentWidth(Alignment.End)
+                    )
+                }
+
+                //Getting Starting Date From Firebase
+                firebaseViewModel.getDocumentReference("users","userId", getCurrentUserId()){result->
+                    firebaseViewModel.getFieldAsMap("users",result.toString(),"readingList"){
+                        val currentBook = it[bookId]
+                        if(currentBook.isNullOrEmpty()) {
+                            startedReadingStateText.value = "Started At..."
+                            startedReadingState = false
+                        }else{
+                            startedReadingStateText.value = "Started At ${currentBook}"
+                            startedReadingState  = true
+                        }
+                    }
+                }
+                //Getting Finished Date From Firebase
+                firebaseViewModel.getDocumentReference("users","userId", getCurrentUserId()){result->
+                    firebaseViewModel.getFieldAsMap("users",result.toString(),"finishedReading"){
+                        val currentBook = it[bookId]
+                        if(currentBook.isNullOrEmpty()) {
+                            finishedReadingStateText.value = "Finished At..."
+                            finishedReadingState = false
+                        }else{
+                            finishedReadingStateText.value = "Finished At ${currentBook}"
+                            finishedReadingState  = true
+                        }
+                    }
+                }
+
+                //Book Menu Area
+                Row(modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically){
+                    bookMenu(bookDetailsState.data,viewModel = firebaseViewModel)
+                }
+                Row(
+                    modifier = Modifier
+                        .padding(start = 2.dp, top = 5.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = startedReadingStateText.value,
+                        fontWeight = FontWeight.W500,
+                        fontSize = 13.sp,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .padding(top = 6.dp)
+                            .weight(1f)
+                            .clickable {
+                                firebaseViewModel.getDocumentReference(
+                                    "users",
+                                    "userId",
+                                    getCurrentUserId()
+                                ) { result ->
+                                    if (!startedReadingState) {
+                                        firebaseViewModel.getFieldAsMap(
+                                            "users",
+                                            result.toString(),
+                                            "readingList"
+                                        ) {
+                                            var contentList = it
+                                            contentList.put(bookId, currentDate)
+                                            if (contentList != null) {
+                                                firebaseViewModel.updateField(
+                                                    "users",
+                                                    result.toString(),
+                                                    "readingList",
+                                                    contentList
+                                                )
+                                                startedReadingStateText.value =
+                                                    "Started At " + currentDate
+                                            }
+                                        }
+                                    } else {
+                                        firebaseViewModel.getFieldAsMap(
+                                            "users",
+                                            result.toString(),
+                                            "readingList"
+                                        ) {
+                                            var contentList = it
+                                            contentList.remove(bookId)
+                                            if (contentList != null) {
+                                                firebaseViewModel.updateField(
+                                                    "users",
+                                                    result.toString(),
+                                                    "readingList",
+                                                    contentList
+                                                )
+                                                startedReadingStateText.value = "Started At..."
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                    )
+                    Text(
+                        text = finishedReadingStateText.value,
+                        fontWeight = FontWeight.W500,
+                        fontSize = 13.sp,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .padding(top = 6.dp)
+                            .weight(1f)
+                            .wrapContentWidth(Alignment.End)
+                            .clickable {
+                                firebaseViewModel.getDocumentReference(
+                                    "users",
+                                    "userId",
+                                    getCurrentUserId()
+                                ) { result ->
+                                    if (!finishedReadingState) {
+                                        firebaseViewModel.getFieldAsMap(
+                                            "users",
+                                            result.toString(),
+                                            "finishedReading"
+                                        ) {
+                                            var contentList = it
+                                            contentList.put(bookId, currentDate)
+                                            if (contentList != null) {
+                                                firebaseViewModel.updateField(
+                                                    "users",
+                                                    result.toString(),
+                                                    "finishedReading",
+                                                    contentList
+                                                )
+                                                finishedReadingStateText.value =
+                                                    "Finished At " + currentDate
+                                            }
+                                        }
+                                    } else {
+                                        firebaseViewModel.getFieldAsMap(
+                                            "users",
+                                            result.toString(),
+                                            "finishedReading"
+                                        ) {
+                                            var contentList = it
+                                            contentList.remove(bookId)
+                                            if (contentList != null) {
+                                                firebaseViewModel.updateField(
+                                                    "users",
+                                                    result.toString(),
+                                                    "finishedReading",
+                                                    contentList
+                                                )
+                                                finishedReadingStateText.value = "Finished At..."
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                    )
                 }
 
             }
-            val userId  = getCurrentUserId()
-            val firebaseViewModel : FirebaseViewModel = hiltViewModel()
-            bottomRowArea(viewModel = firebaseViewModel,book = bookDetailsState.data,userId =userId)
-            HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
-            bookMenu(bookDetailsState.data,viewModel = firebaseViewModel)
-            HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
-            bookDetailsRow(bookDetailsState.data)
-            HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
+
+            //Book Description Area
+            HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
             bookDescription(book = bookDetailsState.data?.volumeInfo?.description.toString())
+            HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
+            bookDetailsRow(bookDetailsState.data)
             Spacer(modifier = Modifier.height(10.dp))
 
-            HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
+            HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
 
             val author_name = bookDetailsState.data?.volumeInfo?.authors?.get(0).toString()
             val bookCategory = bookDetailsState.data?.volumeInfo?.categories?.get(0).toString()
             val formattedName = author_name.slice(0..author_name.length-1)
             val formattedCategory = bookCategory.slice(0..bookCategory.length-1).split("/")[0]
             if(formattedName.isNotEmpty()){
-                GetAuthorRelatedBooks(readerNavController = navController, searchQuery = formattedName,viewModel= viewModel)
+                GetAuthorRelatedBooks(readerNavController = navController, searchQuery =formattedName,viewModel= viewModel)
             }
 
-            if(formattedCategory.isNotEmpty() && formattedCategory.contains("null") ==false){
-                GetRelatedBooks(readerNavController = navController, searchQuery = formattedCategory,viewModel=viewModel)
+            if(!bookDetailsState.data.volumeInfo.title.isNullOrEmpty()){
+                GetRelatedBooks(readerNavController = navController, searchQuery = bookDetailsState.data.volumeInfo.title.toString(),viewModel=viewModel)
             }
-            HorizontalDivider(color = Color.LightGray, thickness = 2.dp)
-            CommentButtonUi()
+            HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
+            CommentButtonUi(str = "What Readers Says",imageUrl = bookDetailsState?.data?.volumeInfo?.imageLinks?.thumbnail.toString()){
+                navController.navigate(ReaderScreens.ReviewScreen.name+"/${bookId}")
+            }
+
+            CommentArea(navController=navController,bookId=bookId)
 
         }
     }
     }
-
-    //For Handling Back press Using Device
-    BackHandler {
-        if (navController.previousBackStackEntry?.destination?.route.contentEquals(
-                ReaderScreens.MainScreen.name
-            )
-        ) {
-            navController.navigate(navController.previousBackStackEntry?.destination?.route.toString()){
-                popUpTo(navController.previousBackStackEntry?.destination?.route.toString(),){
-                    inclusive = true
-                }
-            }
-        } else {
-            navController.popBackStack()
-        }
-    }
-
 }
 
 
 @Composable
  fun bookMenu(book : Item?, viewModel : FirebaseViewModel){
     var likeButtonIsClicked = remember { mutableStateOf(false) }
+    val wishlistClicked = remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    //Sharing The Content on Click of A Button
     val infointent = remember { Intent(Intent.ACTION_VIEW, book?.volumeInfo?.infoLink?.toUri()) }
-    val previewintent = remember {Intent(Intent.ACTION_VIEW,book?.volumeInfo?.previewLink?.toUri())}
     val shareIntent = remember{Intent(Intent.ACTION_SEND)}
     shareIntent.setType("text/plain")
     shareIntent.putExtra(Intent.EXTRA_TEXT,"${book?.volumeInfo?.title}\n Preview Link: ${book?.volumeInfo?.previewLink}")
 
     val userId = getCurrentUserId()
+    //Liked Buttons
     val likedIcon = Icons.Default.ThumbUpOffAlt
     val likedIconClicked = Icons.Default.ThumbUp
+
+    //Wishlist Button
+    val wishlistButton = Icons.Outlined.BookmarkAdd
+    val wishlistClickedButton = Icons.Filled.Bookmark
 
    //Updating The Like Button If The Open Book Has Already Been Liked
     viewModel.getDocumentReference("users","userId",userId){result->
         if (result != null) {
             viewModel.getFieldAsList("users",result,"likedBooks"){
-               val bookList = it
+               val bookList = it as MutableList<String>
                 if(bookList?.contains(book?.id.toString()) == true){
                     likeButtonIsClicked.value = true
                 }else{
@@ -270,16 +459,33 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
         }
     }
 
+
+    //For Checking Whether The Book Exist Within the wishlist or not
+    viewModel.getDocumentReference("users", "userId", userId) { result ->
+        if (result != null) {
+            viewModel.getFieldAsList("users", result, "wishlist") {
+                val bookList = it as MutableList<String>
+                if (bookList?.contains(book?.id.toString()) == true) {
+                    wishlistClicked.value = true
+                } else {
+                    wishlistClicked.value = false
+                }
+            }
+        }
+    }
+
     val color = colorResource(id = R.color.blue)
     Row(modifier = Modifier
-        .fillMaxWidth()
-        .padding(12.dp, 12.dp, 0.dp, 12.dp),
+        .width(getScreenWidth() / 2)
+        .padding(start = 0.dp, top = 12.dp, end = 0.dp, bottom = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically){
-            Icon(imageVector = if(!likeButtonIsClicked.value) likedIcon else likedIconClicked,
+            Icon(imageVector = if(!likeButtonIsClicked.value)
+                likedIcon else likedIconClicked,
                 contentDescription ="Like Icon",
                 modifier = Modifier
-                    .size(30.dp)
+                    .size(20.dp)
+                    .weight(1f)
                     .clickable {
                         AddToDatabase(
                             viewModel = viewModel,
@@ -290,30 +496,35 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                         )
                     },
                 tint = if(likeButtonIsClicked.value)color else Color.Gray)
-        Icon(imageVector = Icons.AutoMirrored.Outlined.Comment,
-            contentDescription = "Comments Button",
-            tint = Color.Gray,
+        Icon(imageVector =if(!wishlistClicked.value)
+            wishlistButton else wishlistClickedButton,
+            contentDescription ="Book Mark",
             modifier = Modifier
-                .size(30.dp)
+                .weight(1f)
+                .size(20.dp)
                 .clickable {
-
-                })
+                    AddToDatabase(
+                        viewModel = viewModel,
+                        filedName = "wishlist",
+                        book = book,
+                        currentUserId = userId,
+                        buttonState = wishlistClicked
+                    )
+                },
+            tint =if(wishlistClicked.value)color else Color.Gray)
         Icon(imageVector = Icons.Default.Info,
             contentDescription ="Like Icon",
             modifier = Modifier
-                .size(30.dp)
+                .size(20.dp)
+                .weight(1f)
                 .clickable { context.startActivity(infointent) },
             tint = Color.Gray)
-        Icon(imageVector = Icons.Default.Preview,
-            contentDescription ="Like Icon",
-            modifier = Modifier
-                .size(30.dp)
-                .clickable { context.startActivity(previewintent) },
-            tint = Color.Gray)
+
         Icon(imageVector = Icons.Default.Share,
             contentDescription ="Like Icon",
             modifier = Modifier
-                .size(30.dp)
+                .size(20.dp)
+                .weight(1f)
                 .clickable {
                     context.startActivity(shareIntent)
                 },
@@ -327,20 +538,20 @@ fun GetRelatedBooks(readerNavController: NavController,searchQuery : String,
                           viewModel: DetailsScreenViewModel = hiltViewModel()) {
     LaunchedEffect(searchQuery) {
         if(viewModel.relatedBooks.isEmpty()){
-            viewModel.getRelatedBook("subject:${searchQuery}")
+            viewModel.getRelatedBook("${searchQuery}")
         }
     }
     if(viewModel.relatedBooks.isNotEmpty()){
 
-        SingleCategoryBooks(rowTitle = searchQuery, books =viewModel.relatedBooks, readerNavController = readerNavController ){
-            readerNavController.navigate(route = ReaderScreens.MoreBookScreen.name+"/${"subject:"+searchQuery}")
+        SingleCategoryBooks(rowTitle = "Suggested Books", books =viewModel.relatedBooks, readerNavController = readerNavController ){
+            readerNavController.navigate(route = ReaderScreens.MoreBookScreen.name+"/${searchQuery}")
         }
     }
 }
 
 @Composable
 fun GetAuthorRelatedBooks(readerNavController: NavController,searchQuery : String,
-                 viewModel: DetailsScreenViewModel = hiltViewModel()) {
+                 viewModel: DetailsScreenViewModel) {
     LaunchedEffect(searchQuery) {
         if(viewModel.author_books.isEmpty()){
             viewModel.getAuthorList("author=${searchQuery}")
@@ -358,177 +569,152 @@ fun GetAuthorRelatedBooks(readerNavController: NavController,searchQuery : Strin
 @Composable
 fun bookDescription(book : String){
     val cleanDescription = HtmlCompat.fromHtml(book,HtmlCompat.FROM_HTML_MODE_LEGACY).toString()
-
-
-    Column(modifier = Modifier.padding(12.dp)) {
+    // Expanded Visibility State
+    val expanded = remember{ mutableStateOf(false) }
+    Column(modifier = Modifier.padding()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .wrapContentHeight()
+                .padding(start = 8.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
 
 
             Text(
                 text = "Description",
                 color = Color.Black,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
+                fontWeight = FontWeight.W400,
+                fontSize = 19.sp,
+                modifier = Modifier.weight(1f)
             )
+            //Book Description expanded or not toggle button
+            Image(imageVector = if(expanded.value)Icons.Filled.KeyboardArrowUp
+            else Icons.Filled.KeyboardArrowDown,
+                contentDescription = "Book Description Expanded State",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(35.dp)
+                    .weight(1f)
+                    .wrapContentWidth(Alignment.End)
+                    .clickable {
+                        expanded.value = !expanded.value
+                    })
         }
-            Text(
-                text = "${cleanDescription}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                textAlign = TextAlign.Start,
-                overflow = TextOverflow.Ellipsis,
-                color = Color.Black.copy(0.5f), modifier = Modifier.padding(top = 6.dp)
-            )
+        AnimatedVisibility(visible = expanded.value) {
+            Column(modifier = Modifier.wrapContentHeight()){
+                Text(
+                    text = "${cleanDescription}",
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Start,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.Black, modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun bookDetailsRow(book : Item?){
     Column{
-        Row (modifier = Modifier
-            .fillMaxWidth()
-            .padding(12.dp),
+        val expanded = remember { mutableStateOf(false) }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(start = 8.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start){
-            Text(text = "MORE INFO",
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+
+
+            Text(
+                text = "About The Book",
                 color = Color.Black,
-                fontWeight = FontWeight.Bold,
-                fontSize =20.sp)
+                fontWeight = FontWeight.W400,
+                fontSize = 19.sp,
+                modifier = Modifier.weight(1f)
+            )
+            //Book Description expanded or not toggle button
+            Image(imageVector = if(expanded.value)Icons.Filled.KeyboardArrowUp
+            else Icons.Filled.KeyboardArrowDown,
+                contentDescription = "Book Description Expanded State",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(35.dp)
+                    .weight(1f)
+                    .wrapContentWidth(Alignment.End)
+                    .clickable {
+                        expanded.value = !expanded.value
+                    })
         }
         val bookCategory  =book?.volumeInfo?.categories.toString().trim()
         val formattedCategory = formatString(bookCategory,1,bookCategory.length-2,'/',',')
 
         val author = book?.volumeInfo?.authors.toString()
         val formattedAuthorName = formatString(author,1,author.length-2,'/',',')
-        bookSpecificDetails(categories_label = "Category", book =formattedCategory, width = 30.dp)
-        bookSpecificDetails(categories_label = "Publisher", book =book?.volumeInfo?.publisher.toString(), width = 27.dp)
-        bookSpecificDetails(categories_label = "Page Count", book =book?.volumeInfo?.pageCount.toString() , width = 17.dp)
-        bookSpecificDetails(categories_label = "Author", book =formattedAuthorName, width = 40.dp)
-        bookSpecificDetails(categories_label = "Date", book = book?.volumeInfo?.publishedDate.toString(), width = 55.dp)
-
+        AnimatedVisibility(visible = expanded.value) {
+            Column(modifier = Modifier.wrapContentHeight()){
+                bookSpecificDetails(categories_label = "Categories", book =formattedCategory)
+                bookSpecificDetails(categories_label = "Publisher", book =book?.volumeInfo?.publisher.toString(), width = 27.dp)
+                bookSpecificDetails(categories_label = "Pages", book =book?.volumeInfo?.pageCount.toString() , width = 17.dp)
+                bookSpecificDetails(categories_label = "Written By", book =formattedAuthorName, width = 40.dp)
+                bookSpecificDetails(categories_label = "Release Date", book = book?.volumeInfo?.publishedDate.toString(), width = 55.dp)
+            }
+        }
     }
-
 }
 @Composable
-fun bookSpecificDetails(categories_label : String,book :String,width : Dp = 20.dp){
-    Row(modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp),
+fun bookSpecificDetails(categories_label : String,book :String,width : Dp = 20.dp) {
+    Row(
+        modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment =  Alignment.Top){
-        Text(text = categories_label,
-            color = Color.Black,
-            fontWeight = FontWeight.Bold,
-            fontSize =15.sp)
-        Spacer(modifier = Modifier.width(width))
+        verticalAlignment = Alignment.Top
+    ) {
         if (book != null) {
-            Text(text = "${book}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
+            Text(
                 textAlign = TextAlign.Start,
                 overflow = TextOverflow.Ellipsis,
-                color = Color.Black.copy(0.5f), modifier = Modifier.padding(top = 6.dp))
+                color = Color.Black, modifier = Modifier.padding(8.dp),
+                text = buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.W600, fontSize = 17.sp)) {
+                        append("${categories_label}")
+                    }
+                    withStyle(
+                        style = SpanStyle(
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 16.sp, color = Color.Black
+                        )
+                    ) {
+                        append("\n${book}")
+                    }
+                })
         }
     }
 }
 
-@Composable
-fun bottomRowArea(viewModel: FirebaseViewModel,book: Item?,userId : String){
-    val wishlistClicked = remember{ mutableStateOf(false) }
-    val wishListText = remember { mutableStateOf("Add to Wishlist") }
-    val startReadingClicked =  remember{ mutableStateOf(false) }
-    val readingListText = remember { mutableStateOf("Start Reading") }
+    fun AddToDatabase(
+        viewModel: FirebaseViewModel,
+        book: Item?,
+        filedName: String,
+        currentUserId: String,
+        buttonState: MutableState<Boolean>,
+        onClick: () -> Unit = {},
+    ) {
+        var isProcessing: Boolean = false
+        if (isProcessing) return
 
-
-    //For Checking Whether The Book Exist Within the wishlist or not
-    viewModel.getDocumentReference("users","userId",userId){result->
-        if (result != null) {
-            viewModel.getFieldAsList("users",result,"wishlist"){
-                val bookList = it
-                if(bookList?.contains(book?.id.toString()) == true){
-                    wishlistClicked.value = true
-                    wishListText.value = "Wishlisted"
-                }else{
-                    wishlistClicked.value = false
-                    wishListText.value = "Add to Wishlist"
-                }
-            }
-        }
-    }
-    //For Checking Whether The Book Exist Within the ReadingList or not
-    viewModel.getDocumentReference("users","userId",userId){result->
-        if (result != null) {
-            viewModel.getFieldAsList("users",result,"readingList"){
-                val bookList = it
-                if(bookList?.contains(book?.id.toString()) == true){
-                    startReadingClicked.value = true
-                    readingListText.value = "Reading..."
-                }else{
-                    startReadingClicked.value = false
-                    readingListText.value = "Start Reading"
-                }
-            }
-        }
-    }
-
-
-    Row (modifier = Modifier
-        .fillMaxWidth()
-        .padding(10.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically){
-
-        LoginButton(modifier = Modifier
-            .width(155.dp)
-            .height(50.dp),
-            label = wishListText,
-            cornerRadius = 20.dp,
-            color = colorResource(id = R.color.blue),
-            elevation = 5.dp,
-            onClick = {
-                AddToDatabase(viewModel = viewModel, filedName = "wishlist",book = book, currentUserId = userId, buttonState = wishlistClicked)
-                if(!wishlistClicked.value){
-                    wishListText.value = "Wishlisted"
-                }else{
-                    wishListText.value = "Add To Wishlist"
-                }
-            })
-
-        LoginButton(modifier = Modifier
-            .width(155.dp)
-            .height(50.dp),
-            onClick = {
-                AddToDatabase(viewModel = viewModel, filedName = "readingList",book = book, currentUserId = userId, buttonState = startReadingClicked)
-                if(!startReadingClicked.value){
-                    readingListText.value = "Reading..."
-                }else{
-                    readingListText.value = "Start Reading"
-                }
-            },
-            label =readingListText,
-            cornerRadius = 20.dp,
-            color = colorResource(id = R.color.blue),
-            elevation = 5.dp)
-    }
-}
-
-
-fun AddToDatabase(viewModel : FirebaseViewModel, book: Item?,filedName : String, currentUserId: String, buttonState : MutableState<Boolean>,onClick:()->Unit={}){
-    var isProcessing : Boolean = false
-    if(isProcessing) return
-
-    isProcessing = true
-    viewModel.getDocumentReference("users","userId",currentUserId){result->
-        if (result != null) {
-            Log.d("TAG",result)
-                if(!buttonState.value){
-                    viewModel.getFieldAsList("users",result,filedName) {
-                        var contentList = it
-                        contentList?.add(book?.id.toString())
+        isProcessing = true
+        viewModel.getDocumentReference("users", "userId", currentUserId) { result ->
+            if (result != null) {
+                Log.d("TAG", result)
+                if (!buttonState.value) {
+                    viewModel.getFieldAsList("users", result, filedName) {
+                        var contentList = it as MutableList<String>
+                        contentList.add(book?.id.toString())
 
                         if (contentList != null) {
                             viewModel.updateField("users", result, filedName, contentList)
@@ -539,9 +725,9 @@ fun AddToDatabase(viewModel : FirebaseViewModel, book: Item?,filedName : String,
                         onClick()
                     }
 
-                }else {
+                } else {
                     viewModel.getFieldAsList("users", result, filedName) {
-                        var contentList = it
+                        var contentList = it as MutableList<String>
                         contentList?.removeAll(listOf(book?.id))
 
                         if (contentList != null) {
@@ -552,78 +738,89 @@ fun AddToDatabase(viewModel : FirebaseViewModel, book: Item?,filedName : String,
                         onClick()
                     }
                 }
+            }
         }
     }
-}
-
-@Composable
-fun CommentButtonUi(onClick: () -> Unit={}){
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .clickable { onClick() }) {
-        Row(modifier = Modifier.padding(5.dp)
-            ,horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = Icons.Outlined.ModeComment,
-                contentDescription = "Comment Image",
-                tint = Color.DarkGray,
-                modifier = Modifier.padding(8.dp))
-            Text(text = "Comments",
-                color = Color.DarkGray,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold)
-            Text(text = "    ....",
-                color = Color.Gray,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold)
-        }
-        Row(horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = Icons.Filled.AccountCircle,
-                contentDescription = "User Icon",
-                tint = Color.DarkGray,
-                modifier = Modifier
-                    .size(49.dp)
-                    .padding(8.dp)
-                )
-            Text(modifier = Modifier
-                .background(color = Color.LightGray, shape = RoundedCornerShape(8.dp))
-                .padding(10.dp),
-                text = "Hey, You Can Add Comments Here ....",
-                color = Color.Gray,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Normal)
-        }
-    }
-}
 
 
 @Composable
-fun OtherUserComments(content : String){
-    Row(modifier = Modifier.padding(10.dp),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.Top){
-        Icon(imageVector = Icons.Filled.AccountCircle,
-            contentDescription = "User Icon",
-            tint = Color.DarkGray,
+fun CommentArea(navController: NavController,bookId: String=""){
+    Row (modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center){
+        Button(onClick = { navController.navigate(route = ReaderScreens.AllCommentScreen.name+"/${bookId}") },
             modifier = Modifier
-                .size(49.dp)
-                .padding(8.dp)
-        )
-        Column{
-            Text(modifier = Modifier
-                .padding(10.dp),
-                text = "Ravi Shankar Mishra",
-                color = Color.Gray,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Normal)
-            Text(modifier = Modifier
-                .background(color = Color.LightGray, shape = RoundedCornerShape(8.dp))
-                .padding(10.dp),
-            text = "${content}",
-            color = Color.Gray,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Normal)
+                .padding(top = 20.dp, bottom = 30.dp)
+                .border(width = 2.dp, color = Color.Gray, shape = RoundedCornerShape(20.dp)),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White)) {
+            Text(text = "See all reviews",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+            )
         }
     }
 }
+    @Composable
+    fun CommentButtonUi(str : String,
+        imageUrl : String,
+        onClick: () -> Unit = {}
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(15.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = str,
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(top = 15.dp, bottom = 10.dp)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .wrapContentSize()
+                    .clickable {
+                        onClick()
+                    }
+                    .padding(12.dp),
+                colors = CardDefaults.cardColors(Color.White),
+                elevation = CardDefaults.cardElevation(6.dp),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row {
+                    Image(
+                        painter = if (imageUrl.isNullOrEmpty())
+                            painterResource(id = R.drawable.no_img)
+                        else rememberAsyncImagePainter(model = imageUrl),
+                        contentDescription = "Book Image Url",
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(Color.White, shape = RoundedCornerShape(20.dp))
+                    )
+                    Column(
+                        modifier = Modifier.padding(10.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Leave a Review",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                        )
+                        RatingBar(rating = 0, enabled = false) {
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+

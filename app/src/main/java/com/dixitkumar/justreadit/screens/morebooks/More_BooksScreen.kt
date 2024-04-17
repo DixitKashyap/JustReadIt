@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
@@ -82,7 +83,7 @@ fun More_BooksScreen(navController: NavController,moreDetails : String,viewModel
 
 @Composable
 fun MoreScreenUi(moreDetails: String,list: List<Item>,navController: NavController){
-    Column (modifier = Modifier.padding(8.dp)){
+    Column (modifier = Modifier.padding(12.dp)){
     Row (modifier = Modifier
         .fillMaxWidth()
         .padding(12.dp),
@@ -117,7 +118,7 @@ fun MoreScreenUi(moreDetails: String,list: List<Item>,navController: NavControll
                 fontWeight = FontWeight.Bold
                 )
         }
-      LazyVerticalGrid(columns = GridCells.Adaptive(100.dp), content = {
+      LazyVerticalGrid(columns = GridCells.Adaptive(120.dp), content = {
           items(list){
                BookItems(book = it, readerNavController =navController)
           }

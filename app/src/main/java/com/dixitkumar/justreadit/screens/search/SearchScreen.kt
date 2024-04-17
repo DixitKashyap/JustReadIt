@@ -133,7 +133,7 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(), firebaseV
                     }
                 }
 
-                if(viewModel.default_list.isNotEmpty() && viewModel.suggestedList.isNotEmpty() && recentSearchList!=null) {
+                if(viewModel.default_list.isNotEmpty() && viewModel.suggestedList.isNotEmpty()) {
                     SearchedBook(list1 = viewModel.default_list,list2 = viewModel.suggestedList, list3 = recentSearchList, navController = navController)
                 }
             }
@@ -147,11 +147,10 @@ fun SearchQueryToDb(query : String,viewModel: FirebaseViewModel){
         Log.d("TAG","Documnet Ref"+documentRef.toString())
 
         viewModel.getFieldAsList("users",documentRef.toString(),"recentSearched"){
-            var contentList = it
+            var contentList = it as MutableList<String>
             Log.d("SEARCH",contentList.toString())
-            if(contentList==null){
-                contentList = mutableListOf("")
-                contentList?.add(query)
+            if(it.isNullOrEmpty()){
+                contentList = mutableListOf(query)
                 viewModel.updateField("users",documentRef.toString(),"recentSearched",contentList)
             }
             else if(!contentList.isNullOrEmpty()&&contentList?.size!! <=10){
@@ -195,45 +194,19 @@ fun SearchArea(
             modifier = Modifier
                 .size(27.dp)
                 .clickable {
-                    if (navController.previousBackStackEntry?.destination?.route.contentEquals(
-                            ReaderScreens.MainScreen.name
-                        )
-                    ) {
-                        navController.navigate(navController.previousBackStackEntry?.destination?.route.toString()) {
-                            popUpTo(navController.previousBackStackEntry?.destination?.route.toString(),) {
-                                inclusive = true
-                            }
-                        }
-                    } else {
-                        navController.popBackStack()
-                    }
+                  navController.popBackStack()
                 })
         Spacer(modifier = Modifier.width(15.dp))
-        InputFiled(valueState =searchQuery ,
-            labelId ="Search here" ,
-            enabled = true,
-            imeAction = ImeAction.Search,
-            onAction = KeyboardActions {
-                if(!valid)return@KeyboardActions
-                onSearch(searchQuery.value.toString().trim())
-                keyboardController?.hide()
-            })
-    }
+            InputFiled(valueState =searchQuery ,
+                labelId ="Search here" ,
+                enabled = true,
+                imeAction = ImeAction.Search,
+                onAction = KeyboardActions {
+                    if(!valid)return@KeyboardActions
+                    onSearch(searchQuery.value.toString().trim())
+                    keyboardController?.hide()
+                })
 
-    //Handling Back Stack
-    BackHandler {
-        if (navController.previousBackStackEntry?.destination?.route.contentEquals(
-                ReaderScreens.MainScreen.name
-            )
-        ) {
-            navController.navigate(navController.previousBackStackEntry?.destination?.route.toString()) {
-                popUpTo(navController.previousBackStackEntry?.destination?.route.toString(),) {
-                    inclusive = true
-                }
-            }
-        } else {
-            navController.popBackStack()
-        }
     }
 }
 
@@ -358,7 +331,8 @@ fun SearchedItem(book : Item?, navController: NavController){
 fun recentSearchItems(query: String,viewModel: SearchScreenViewModel = hiltViewModel()){
     Row(modifier = Modifier
         .fillMaxWidth()
-        .padding(12.dp).clickable {
+        .padding(12.dp)
+        .clickable {
             viewModel.searchQuery(query)
             viewModel.suggested_book(query)
         },

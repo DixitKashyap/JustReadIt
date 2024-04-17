@@ -9,19 +9,53 @@ import com.dixitkumar.justreadit.data.DataOrException
 import com.dixitkumar.justreadit.model.Comments
 import com.dixitkumar.justreadit.model.MBook
 import com.dixitkumar.justreadit.model.MUser
-import com.dixitkumar.justreadit.repository.FireRepository
+import com.dixitkumar.justreadit.repository.FireBaseBookRepository
+import com.dixitkumar.justreadit.repository.FireBaseUserRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class FirebaseViewModel @Inject constructor(private val repository : FireRepository) : ViewModel() {
+class FirebaseViewModel @Inject constructor(
+    private val userRepository : FireBaseUserRepository,
+    private val bookRepository: FireBaseBookRepository
+) : ViewModel() {
 
     val db = FirebaseFirestore.getInstance()
-    val data : MutableState<DataOrException<List<MUser>, Boolean, Exception>> = mutableStateOf(
+    val userData : MutableState<DataOrException<List<MUser>, Boolean, Exception>> = mutableStateOf(
         DataOrException(listOf(),true,Exception(""))
     )
+    val bookData : MutableState<DataOrException<List<MBook>, Boolean, Exception>> = mutableStateOf(
+        DataOrException(listOf(),true,Exception(""))
+    )
+
+
+    init {
+        getAllUsersFromDatabase()
+        getAllBooksFromDatabase()
+    }
+
+    private fun getAllUsersFromDatabase(){
+        viewModelScope.launch {
+            userData.value .loading = false
+            userData.value = userRepository.getAllUsersFromDatabase()
+
+            if(!userData.value.data.toString().isNullOrEmpty()) userData.value.loading = false
+        }
+        Log.d("TAG","getAllUserFromDatabase : ${userData.value.data?.toList()}")
+
+    }
+
+    private fun getAllBooksFromDatabase(){
+        viewModelScope.launch {
+            bookData.value.loading = false
+            bookData.value = bookRepository.getAllBooksFromDatabase()
+
+            if(!bookData.value.data.toString().isNullOrEmpty()) userData.value.loading = false
+        }
+        Log.d("Books" ,"getAllBooksFromDatabase : ${bookData.value.data?.toList()}")
+    }
 
     fun updateField(collectionName: String, documentId: String, fieldName: String, newValue: Any) {
         db.collection(collectionName)
@@ -38,33 +72,18 @@ class FirebaseViewModel @Inject constructor(private val repository : FireReposit
                 Log.d("TAG",e.localizedMessage.toString())
             }
     }
-    fun getField(collectionName: String,documentId: String,fieldName: String,callback: (String) -> Unit){
-        db.collection(collectionName)
-            .document(documentId)
-            .get().addOnCompleteListener {
-                if (it.isSuccessful) {
-                    val docRef = it.getResult()
-                    if (docRef.exists()) {
-                        val contentList = docRef.get(fieldName)
-                        callback(contentList.toString())
-                    } else {
-                        Log.d(
-                            "TAG",
-                            "Error Occured While Retreving field Data ${it.result.data.toString()}"
-                        )
-                    }
-                }
-            }
-    }
-    fun getFieldAsList(collectionName: String, documentId: String, fieldName: String, callback: (MutableList<String>?) -> Unit)  {
+
+    fun getFieldAsList(collectionName: String, documentId: String, fieldName: String, callback: (MutableList<out Any?>)-> Unit)  {
             db.collection(collectionName)
                 .document(documentId)
                 .get().addOnCompleteListener {
                     if (it.isSuccessful) {
                         val docRef = it.getResult()
                         if (docRef.exists()) {
-                            val contentList = docRef.get(fieldName) as? MutableList<String>
-                            callback(contentList)
+                            val contentList = docRef.get(fieldName) as? MutableList<Any?>
+                            if (contentList != null) {
+                                callback(contentList)
+                            }
                         } else {
                             Log.d(
                                 "TAG",
@@ -73,6 +92,26 @@ class FirebaseViewModel @Inject constructor(private val repository : FireReposit
                         }
                     }
         }
+    }
+    fun getFieldAsMap(collectionName: String, documentId: String, fieldName: String, callback: (MutableMap<String,String>)-> Unit)  {
+        db.collection(collectionName)
+            .document(documentId)
+            .get().addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val docRef = it.getResult()
+                    if (docRef.exists()) {
+                        val contentList = docRef.get(fieldName) as? MutableMap<String,String>
+                        if (contentList != null) {
+                            callback(contentList)
+                        }
+                    } else {
+                        Log.d(
+                            "TAG",
+                            "Error Occured While Retreving field Data ${it.result.data.toString()}"
+                        )
+                    }
+                }
+            }
     }
     fun getDocumentReference(collectionName: String, fieldName: String, fieldValue: Any, callback: (String?) -> Unit) {
         val query = db.collection(collectionName).whereEqualTo(fieldName, fieldValue)
@@ -92,19 +131,9 @@ class FirebaseViewModel @Inject constructor(private val repository : FireReposit
             }
     }
 
-    fun getTotalNumberOfDocument(callback: (Int) -> Unit){
-        FirebaseFirestore.getInstance().collection("users").get().addOnCompleteListener {
-            if(it.isSuccessful){
-              callback(it.result.size())
-            }else{
-                callback(0)
-            }
-        }
-    }
-    fun addBooksToCollection(bookId : String = "",bookLikedBy : Int = 0,bookComments : List<Comments>?= null){
+    fun addBooksToCollection(bookId : String = "",bookComments : List<Comments>?= null){
         val myBooks = MBook(
             bookId = bookId,
-            likedBy = bookLikedBy,
             comments = bookComments
         )
         FirebaseFirestore.getInstance().collection("books").add(myBooks)
@@ -112,18 +141,4 @@ class FirebaseViewModel @Inject constructor(private val repository : FireReposit
 
 
 
-    init {
-        getAllBooksFromDatabase()
-    }
-
-    private fun getAllBooksFromDatabase(){
-        viewModelScope.launch {
-            data.value .loading = false
-            data.value = repository.getAllUsersFromDatabase()
-
-            if(!data.value.data.toString().isNullOrEmpty()) data.value.loading = false
-        }
-        Log.d("TAG","getAllBooksFromDatabase : ${data.value.data?.toList().toString()}")
-
-    }
 }

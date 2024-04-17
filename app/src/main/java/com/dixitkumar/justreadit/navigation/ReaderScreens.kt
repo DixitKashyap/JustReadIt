@@ -9,6 +9,8 @@ enum class ReaderScreens {
     MainScreen,
     HomeScreen,
     DetailsScreen,
+    AllCommentScreen,
+    ReviewScreen,
     MoreBookScreen,
     SearchScreen,
     MyReadingsScreen,

@@ -8,6 +8,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.dixitkumar.justreadit.screens.MainScreen
 import com.dixitkumar.justreadit.screens.SplashScreen
+import com.dixitkumar.justreadit.screens.details.AllCommentScreen
+import com.dixitkumar.justreadit.screens.details.BookReviewScreen
 import com.dixitkumar.justreadit.screens.details.Book_DetailsScreen
 import com.dixitkumar.justreadit.screens.home.HomeScreen
 import com.dixitkumar.justreadit.screens.login.LoginScreen
@@ -56,6 +58,26 @@ fun ReaderNavigation(){
         
         composable(route = ReaderScreens.SearchScreen.name){
             SearchScreen(navController = navController)
+        }
+
+        val reviewScreen = ReaderScreens.ReviewScreen.name
+        composable(route="$reviewScreen/{bookImageUrl}", arguments = listOf(navArgument("bookImageUrl"){
+            type = NavType.StringType
+        })){
+            backStackEntry ->
+            backStackEntry?.arguments?.getString("bookImageUrl").let{
+                BookReviewScreen(navController = navController, bookId = it.toString())
+            }
+        }
+
+        val allCommentsScreen = ReaderScreens.AllCommentScreen.name
+        composable(route = "$allCommentsScreen/{bookId}", arguments = listOf(navArgument("bookId"){
+            type = NavType.StringType
+        })){
+            backStackEntry->
+            backStackEntry?.arguments?.getString("bookId").let {
+                AllCommentScreen(navController = navController,bookId = it.toString())
+            }
         }
     }
 }

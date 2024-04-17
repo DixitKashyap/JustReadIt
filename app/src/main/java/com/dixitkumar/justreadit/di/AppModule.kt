@@ -2,7 +2,8 @@ package com.dixitkumar.justreadit.di
 
 import com.dixitkumar.justreadit.network.BookApi
 import com.dixitkumar.justreadit.repository.BookRepository
-import com.dixitkumar.justreadit.repository.FireRepository
+import com.dixitkumar.justreadit.repository.FireBaseBookRepository
+import com.dixitkumar.justreadit.repository.FireBaseUserRepository
 import com.dixitkumar.justreadit.utils.Constants
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
@@ -34,7 +35,14 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideFireBookRepository(): FireRepository {
-        return FireRepository(queryBook = FirebaseFirestore.getInstance().collection("users"))
+    fun provideFireUserRepository(): FireBaseUserRepository {
+        return FireBaseUserRepository(queryBook = FirebaseFirestore.getInstance().collection("users"))
     }
+
+    @Singleton
+    @Provides
+    fun provideFireBookRepository(): FireBaseBookRepository {
+        return FireBaseBookRepository(queryBook = FirebaseFirestore.getInstance().collection("books"))
+    }
+
 }
