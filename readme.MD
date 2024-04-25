@@ -18,9 +18,13 @@
 <br>
 
 <h4>Screenshot of BookShelf App<h4>
-<img src = "https://github.com/DixitKashyap/Quiz_App_Python_Tkinter/blob/main/Screenshots/Screenshot1.png"
+<img src = "https://github.com/DixitKashyap/JustReadIt/blob/main/Screenshots/Screenshot-01.jpg"
 width=30% height=20%/>
-<img src = "https://github.com/DixitKashyap/Quiz_App_Python_Tkinter/blob/main/Screenshots/Screenshot2.png"
+<img src = "https://github.com/DixitKashyap/JustReadIt/blob/main/Screenshots/Screenshot-02.jpg"
 width=30% height=20%/>
-<img src = "https://github.com/DixitKashyap/Quiz_App_Python_Tkinter/blob/main/Screenshots/Screenshot3.png"
+<img src = "https://github.com/DixitKashyap/JustReadIt/blob/main/Screenshots/Screenshot-03.jpg"
+width=30% height=20%/>
+<img src = "https://github.com/DixitKashyap/JustReadIt/blob/main/Screenshots/Screenshot_04.jpg"
+width=30% height=20%/>
+<img src = "https://github.com/DixitKashyap/JustReadIt/blob/main/Screenshots/Screenshot_05.jpg"
 width=30% height=20%/>
