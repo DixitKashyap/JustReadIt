@@ -39,6 +39,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -101,7 +102,7 @@ fun EditAccountScreenUi(navController: NavController,firebaseViewModel: Firebase
     selectedImageUri.value = user?.userIconUrl?.toUri()
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())){
-    TopBar()
+    TopNavigation(navController)
      Card (modifier = Modifier
          .fillMaxWidth()
          .padding(10.dp),
@@ -196,7 +197,7 @@ fun EditAccountScreenUi(navController: NavController,firebaseViewModel: Firebase
 }
 
 @Composable
-fun TopBar(){
+fun TopNavigation(navController: NavController){
     Row(modifier = Modifier
         .fillMaxWidth()
         .padding(20.dp),
@@ -205,7 +206,9 @@ fun TopBar(){
             contentDescription = "Back Button",
             modifier = Modifier
                 .weight(0.6f)
-                .wrapContentWidth(Alignment.Start))
+                .wrapContentWidth(Alignment.Start).clickable {
+                    navController.popBackStack()
+                })
 
         Text(text = "User Account",
             fontSize = 20.sp,

@@ -234,7 +234,7 @@ fun SignUpScreenUi(navController: NavController,viewModel: LoginScreenViewModel)
                     elevation = 20.dp,
                     onClick = {
 
-                     if(isInternetConnected){
+                     if(checkNetwork(context)){
                         if (email.value.trim().toString().isNotEmpty()
                             && username.value.trim().toString().isNotEmpty()
                             && phone.value.trim().toString().isNotEmpty()

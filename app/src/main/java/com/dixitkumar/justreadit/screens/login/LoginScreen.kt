@@ -177,7 +177,7 @@ fun LoginScreenUi(
                     fontSize = 17,
                     color = colorResource(id = R.color.blue),
                     elevation = 20.dp, onClick = {
-                     if(isInternetConnected){
+                     if(checkNetwork(context)){
                          if(username.value.trim().isNotEmpty() && password.value.trim().isNotEmpty()){
                              viewModel.SignInWithEmailAndPassword(username.value.trim().toString(),password.value.trim().toString()){
                                  navController.popBackStack()

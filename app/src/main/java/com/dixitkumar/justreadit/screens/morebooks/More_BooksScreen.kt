@@ -51,7 +51,7 @@ fun More_BooksScreen(navController: NavController,moreDetails : String,viewModel
         LaunchedEffect(moreDetails) {
             if (moreDetails.contains("author") && viewModel.author_books.isEmpty()) {
                 viewModel.getAuthorList(moreDetails)
-            } else if (moreDetails.contains("subject") && viewModel.relatedBooks.isEmpty()) {
+            } else if (viewModel.relatedBooks.isEmpty()) {
                 viewModel.getRelatedBook(moreDetails)
             }
         }
@@ -77,7 +77,7 @@ fun More_BooksScreen(navController: NavController,moreDetails : String,viewModel
                     }
                 }else{
                     MoreScreenUi(
-                        moreDetails = "${moreDetails.split(":")[1]}",
+                        moreDetails = if(moreDetails.contains("subject")) moreDetails.split(":")[1] else "Suggestion" ,
                             list =viewModel.relatedBooks,
                         navController=navController)
                 }

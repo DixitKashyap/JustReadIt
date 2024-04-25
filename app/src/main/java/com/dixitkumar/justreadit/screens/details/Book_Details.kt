@@ -416,7 +416,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
             }
 
             if(!bookDetailsState.data.volumeInfo.title.isNullOrEmpty()){
-                GetRelatedBooks(readerNavController = navController, searchQuery = bookDetailsState.data.volumeInfo.title.toString(),viewModel=viewModel)
+                GetRelatedBooks(readerNavController = navController, searchQuery = bookDetailsState.data.volumeInfo.title,viewModel=viewModel)
             }
             HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
             CommentButtonUi(str = "What Readers Says",imageUrl = bookDetailsState?.data?.volumeInfo?.imageLinks?.thumbnail.toString()){
