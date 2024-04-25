@@ -73,14 +73,14 @@ class FirebaseViewModel @Inject constructor(
             }
     }
 
-    fun getFieldAsList(collectionName: String, documentId: String, fieldName: String, callback: (MutableList<out Any?>)-> Unit)  {
+    fun getFieldAsList(collectionName: String, documentId: String, fieldName: String, callback: (MutableList<Any>?)-> Unit)  {
             db.collection(collectionName)
                 .document(documentId)
                 .get().addOnCompleteListener {
                     if (it.isSuccessful) {
                         val docRef = it.getResult()
                         if (docRef.exists()) {
-                            val contentList = docRef.get(fieldName) as? MutableList<Any?>
+                            val contentList = docRef.get(fieldName) as? MutableList<Any>?
                             if (contentList != null) {
                                 callback(contentList)
                             }

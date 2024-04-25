@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
@@ -91,9 +92,7 @@ fun SplashScreenUi(navController: NavController){
                 )
             ReaderLogo()
             Spacer(modifier = Modifier.height(200.dp))
-            LinearProgressIndicator(
-                color = Color.Blue
-            )
+            CircularProgressIndicator(color = colorResource(id = R.color.blue))
 
         }
     }
@@ -102,17 +101,10 @@ fun SplashScreenUi(navController: NavController){
 @Composable
 fun ReaderLogo() {
     Text(modifier = Modifier.padding(15.dp),text = buildAnnotatedString {
-        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp)) {
-            append("Boo")
+        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp, color = Color.Black)) {
+            append("Book")
         }
-        withStyle(
-            style = SpanStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 25.sp,
-            )
-        ) {
-            append("ks")
-        }
+      
         withStyle(
             style = SpanStyle(
                 fontWeight = FontWeight.Bold,
@@ -120,14 +112,11 @@ fun ReaderLogo() {
                 color = colorResource(id = R.color.blue)
             )
         ) {
-            append("Z")
+            append("S")
         }
 
-        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp)) {
-            val uni = String.format("U+1F50D")
-            val code = uni.substring(2).toInt(16) // Remove the 'U+' prefix and convert to integer
-            val char =  String(Character.toChars(code))
-            append("one")
+        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp, color = Color.Black)) {
+            append("helf")
         }
     }
     )

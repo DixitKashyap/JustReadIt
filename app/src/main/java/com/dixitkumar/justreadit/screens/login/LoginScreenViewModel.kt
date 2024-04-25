@@ -65,7 +65,9 @@ class LoginScreenViewModel : ViewModel() {
             email = email,
             likedBooks = emptyList(),
             readingList = emptyMap(),
-            wishlist = emptyList()
+            wishlist = emptyList(),
+            finishedReading = emptyMap(),
+            recentSearched = emptyList()
         )
 
         FirebaseFirestore.getInstance().collection("users").add(user)

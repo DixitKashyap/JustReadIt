@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -56,6 +57,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -89,6 +91,7 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.dixitkumar.justreadit.Componenets.checkNetwork
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.data.Resource
 import com.dixitkumar.justreadit.model.Item
@@ -115,11 +118,21 @@ fun HomeScreen (bottomNavController: NavController
                 viewModel : HomeScreenViewModel= hiltViewModel(),
                 fireBaseViewModel: FirebaseViewModel = hiltViewModel())
 {
+    val context = LocalContext.current
+    val internetConnection = remember{ mutableStateOf(false) }
+
+
+    if(checkNetwork(context)){
+        internetConnection.value = true
+    }else{
+        internetConnection.value = false
+    }
+
         Surface(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = 80.dp)
-        ) {
+        ) {if(internetConnection.value){
             if(viewModel.isLoading == true){
                 Column(modifier = Modifier
                     .fillMaxSize()
@@ -138,10 +151,10 @@ fun HomeScreen (bottomNavController: NavController
                     )
             ) {
 
-                    UserDetailRow(navController = readerNavController)
+                    UserDetailRow(navController = readerNavController,fireBaseViewModel)
                     ReadingNowAreaUi(navController = readerNavController, homeScreenViewModel = viewModel, viewModel = fireBaseViewModel)
                     Spacer(modifier = Modifier.width(100.dp))
-                    LikedGrid(homeViewModel = hiltViewModel(), fireBaseViewModel = hiltViewModel(),navController = readerNavController)
+                    LikedGrid(homeViewModel = viewModel, fireBaseViewModel =fireBaseViewModel,navController = readerNavController)
                     BooksOptions(searchQuery = "Health", list =viewModel.life_style_books, readerNavController = readerNavController)
                     BooksOptions(searchQuery = "Motivation", list =viewModel.motivational_books, readerNavController = readerNavController)
                     BooksOptions(searchQuery = "Spirituality", list =viewModel.detective_novels, readerNavController = readerNavController)
@@ -154,30 +167,77 @@ fun HomeScreen (bottomNavController: NavController
                 }
 
             }
+        }else{
+            Column (modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(bottom = 80.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,){
+                Image(painter = painterResource(id = R.drawable.no_connection),
+                    contentDescription = "internet not Connected",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(400.dp)
+                        .width(250.dp))
+
+                Text(text = "Connect to the internet",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.W400,
+                    color = Color.Black)
+
+                Text(text = "You're offline. Check your connection",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.W300,
+                    color = Color.Black)
+
+                Button(onClick = {
+                 internetConnection.value =  checkNetwork(context)
+                 bottomNavController.navigate(ReaderScreens.HomeScreen.name){
+                     popUpTo(0)
+                 }
+                },
+                    colors = ButtonDefaults.buttonColors(colorResource(id = R.color.blue))
+                ) {
+                    Text(text = "Retry",
+                        color = Color.White)
+                }
+            }
         }
+    }
 }
 @Composable
 fun UserDetailRow(
-    navController: NavController
+    navController: NavController,
+    fireBaseViewModel: FirebaseViewModel
 ){
     val screenWidth = getScreenWidth()
     val halfWidth = screenWidth/50
+
+    val user = GetFirebaseUserData(fireBaseViewModel)
+    val userName = user?.userName
+    val userIcon = user?.userIconUrl
     Column {
        Row (modifier = Modifier
            .fillMaxWidth()
            .padding(15.dp)
            ,verticalAlignment = Alignment.CenterVertically,
        ){
-           Image(imageVector = Icons.Filled.AccountCircle,
-               contentDescription = "user Icon",
-               modifier = Modifier
-                   .size(45.dp)
-                   .border(width = 1.dp, color = Color.DarkGray, shape = CircleShape),
-               contentScale = ContentScale.Fit)
+           Card(colors = CardDefaults.cardColors(Color.White),
+               shape = CircleShape) {
+               Image(painter = if(userIcon.isNullOrEmpty()) painterResource(id = R.drawable.user_icon) else rememberAsyncImagePainter(
+                   model = userIcon
+               ),
+                   contentDescription = "user Icon",
+                   modifier = Modifier
+                       .size(45.dp)
+                       .border(width = 1.dp, color = Color.DarkGray, shape = CircleShape),
+                   contentScale = ContentScale.Fit)
+           }
            Spacer(modifier = Modifier.width(10.dp))
            Text(text = buildAnnotatedString {
                withStyle(style = SpanStyle(fontWeight = FontWeight.W500, fontSize = 18.sp)){
-                   append("Dixit Kumar")
+                   append(if(userName.isNullOrEmpty()) "User" else userName)
                }
                withStyle(style = SpanStyle(fontWeight = FontWeight.W300, fontSize = 16.sp)){
                    append("\nReading Enthusiast")
@@ -220,18 +280,9 @@ fun UserDetailRow(
 fun ReadingNowAreaUi(viewModel: FirebaseViewModel ,homeScreenViewModel: HomeScreenViewModel,navController: NavController) {
     val user = GetFirebaseUserData(viewModel = viewModel)
     if (!user?.readingList.isNullOrEmpty()) {
-        val bookIdList = user?.readingList?.keys
-        val bookList :MutableList<Item>? = mutableListOf()
-        if (bookIdList != null) {
-            for (book in bookIdList) {
-                val bookItem: Item? = produceState<Resource<Item>>(initialValue = Resource.Loading()) {
-                    value = homeScreenViewModel.getBookInfo(book)
-                }.value.data
-                if (bookItem != null) {
-                    bookList?.add(bookItem)
-                }
-            }
-        }
+        val bookIdList = user?.readingList?.keys?.toList()
+        val bookList: MutableList<Item>? =
+            getBooksFromIds(booksIdsList = bookIdList!!, viewModel = homeScreenViewModel)
         if (!bookList.isNullOrEmpty() && bookList.size>=5) {
             Row(
                 modifier = Modifier
@@ -292,38 +343,32 @@ fun ReadingNowAreaUi(viewModel: FirebaseViewModel ,homeScreenViewModel: HomeScre
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(12.dp)
                     ){
-                    Column (modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally){
-                        AsyncImage(
-                            model =ImageRequest.Builder(LocalContext.current)
-                                .data(bookList[page].volumeInfo.imageLinks.thumbnail)
-                                .build(),
-                            contentDescription = "Sliding Image",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(2.dp)
-                        )
-                    }
+                     SuggestionBookItem(bookList[page])
                 }
             }
 
             }
         }
-    }else {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CircularProgressIndicator(color = colorResource(id = R.color.blue))
-        }
     }
 }
 
+@Composable
+fun SuggestionBookItem(item : Item?=null){
+    Column (modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally){
+        AsyncImage(
+            model =ImageRequest.Builder(LocalContext.current)
+                .data(item?.volumeInfo?.imageLinks?.thumbnail)
+                .build(),
+            contentDescription = "Sliding Image",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(2.dp)
+        )
+    }
+}
 @Composable
 fun BooksOptions(readerNavController: NavController,searchQuery : String,
                  list: List<Item>?) {

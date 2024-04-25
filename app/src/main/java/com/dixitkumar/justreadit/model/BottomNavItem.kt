@@ -1,6 +1,7 @@
 package com.dixitkumar.justreadit.model
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -37,16 +38,10 @@ fun getBottomNavItem() :List<BottomNavItem>{
             ),
     BottomNavItem(
         title = ReaderScreens.MyReadingsScreen.name,
-        selectedIcon = Icons.Filled.LibraryBooks,
-        unselectedIcon = Icons.Outlined.LibraryBooks,
+        selectedIcon = Icons.AutoMirrored.Filled.LibraryBooks,
+        unselectedIcon = Icons.AutoMirrored.Filled.LibraryBooks,
         label = "Reading"
     ),
-        BottomNavItem(
-            title = ReaderScreens.WishlistScreen.name,
-            selectedIcon = Icons.Filled.Favorite,
-            unselectedIcon = Icons.Outlined.FavoriteBorder,
-            label = "Wishlist"
-        ),
         BottomNavItem(
             title = ReaderScreens.AccountScreen.name,
             selectedIcon = Icons.Filled.Person,

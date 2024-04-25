@@ -7,8 +7,6 @@ import androidx.navigation.compose.composable
 import com.dixitkumar.justreadit.screens.account.UserAccountScreen
 import com.dixitkumar.justreadit.screens.home.HomeScreen
 import com.dixitkumar.justreadit.screens.reading.ReadingScreen
-import com.dixitkumar.justreadit.screens.search.SearchScreen
-import com.dixitkumar.justreadit.screens.wishlist.WishlistScreen
 
 @Composable
 fun MainScreenNavigation(bottomNavController: NavHostController,readerNavigation : NavHostController){
@@ -18,13 +16,10 @@ fun MainScreenNavigation(bottomNavController: NavHostController,readerNavigation
         }
 
         composable(route = ReaderScreens.MyReadingsScreen.name){
-            ReadingScreen(navController = bottomNavController)
-        }
-        composable(route = ReaderScreens.WishlistScreen.name){
-            WishlistScreen(navController = bottomNavController)
+            ReadingScreen(navController = readerNavigation)
         }
         composable(route = ReaderScreens.AccountScreen.name){
-            UserAccountScreen(navController = bottomNavController)
+            UserAccountScreen(navController = readerNavigation)
         }
     }
 }

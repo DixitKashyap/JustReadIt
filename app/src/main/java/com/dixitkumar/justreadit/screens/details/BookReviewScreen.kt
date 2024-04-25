@@ -1,8 +1,10 @@
 package com.dixitkumar.justreadit.screens.details
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,10 +17,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
@@ -30,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -40,10 +47,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,6 +65,7 @@ import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.data.Resource
 import com.dixitkumar.justreadit.model.Comments
 import com.dixitkumar.justreadit.model.Item
+import com.dixitkumar.justreadit.navigation.ReaderScreens
 import com.dixitkumar.justreadit.screens.search.InputFiled
 import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
 import com.dixitkumar.justreadit.utils.GetFirebaseUserData
@@ -67,18 +77,21 @@ import java.util.Date
 fun BookReviewScreen(navController: NavController,bookId : String,
                      viewModel: DetailsScreenViewModel = hiltViewModel(),
                      firebaseViewModel: FirebaseViewModel = hiltViewModel()){
-    val currentUserId = getCurrentUserId()
 
     //Getting Book Data
     val book = produceState<Resource<Item>>(initialValue = Resource.Loading()) {
         value = viewModel.getBookInfo(bookId)
     }.value
+    Surface(modifier = Modifier.fillMaxWidth(),
+        color = Color.White) {
         BookReviewScreenUI(
             navController = navController,
             bookImageUrl = book.data?.volumeInfo?.imageLinks?.thumbnail.toString(),
             bookId,
             firebaseViewModel=firebaseViewModel
         )
+    }
+
 }
 @Composable
 fun BookReviewScreenUI(navController: NavController?= null,
@@ -93,15 +106,21 @@ fun BookReviewScreenUI(navController: NavController?= null,
     val rating = remember{ mutableStateOf(0) }
     val reviewTitle = remember{ mutableStateOf("") }
     val reviewContent = remember{ mutableStateOf("") }
-    val keyboardController = LocalSoftwareKeyboardController.current
-    Column (Modifier.background(Color.White).fillMaxSize()){
+    Column (
+        Modifier
+            .background(Color.White)
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())){
         Icon(
-            imageVector = Icons.Default.ArrowBack,
+            imageVector = Icons.AutoMirrored.Default.ArrowBack,
             contentDescription = "Back Button",
             tint = Color.Black,
             modifier = Modifier
                 .padding(10.dp)
                 .size(30.dp)
+                .clickable {
+                    navController?.popBackStack()
+                }
         )
         Column (modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -162,6 +181,9 @@ fun BookReviewScreenUI(navController: NavController?= null,
                 }
             }
 
+            BackHandler {
+                navController?.popBackStack()
+            }
             Row (modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically){
@@ -177,63 +199,18 @@ fun BookReviewScreenUI(navController: NavController?= null,
                     rating.value = it
                 }
             }
-
-            Column {
-                Text(text = "Title your review",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.W500,
-                    color = Color.Gray,
-                    modifier = Modifier
-                        .wrapContentWidth(Alignment.Start)
-                        .padding(start = 20.dp, end = 20.dp, top = 20.dp)
-                )
-               OutlinedTextField(
-                   value =reviewTitle.value ,
-                   onValueChange = {
-                       reviewTitle.value = it
-                   },
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .wrapContentHeight()
-                       .padding(start = 20.dp, end = 20.dp, top = 5.dp),
-                   placeholder = {
-                       Text(text = "What Shoot out the most?",
-                           fontSize = 16.sp,
-                           fontWeight = FontWeight.Normal,
-                           color = Color.Gray
-                           )
-                   },
-                   shape = RoundedCornerShape(12.dp)
-               )
-            }
-            Column {
-                Text(text = "Write your review",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.W500,
-                    color = Color.Gray,
-                    modifier = Modifier
-                        .wrapContentWidth(Alignment.Start)
-                        .padding(start = 20.dp, end = 20.dp, top = 20.dp)
-                )
-                OutlinedTextField(
-                    value =reviewContent.value ,
-                    onValueChange = {
-                        reviewContent.value = it
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .padding(start = 20.dp, end = 20.dp, top = 5.dp),
-                    placeholder = {
-                        Text(text = "What did you like or dislike?",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = Color.Gray
-                        )
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
+            //"Title your review"
+            //What Shoot out the most?
+            val keyboardController = LocalSoftwareKeyboardController.current
+            TextInputFiled(label = "Title your review", placeholder = "What Shoot out the most?",textState = reviewTitle,
+                imeAction = ImeAction.Done, onAction = KeyboardActions {
+                keyboardController?.hide()
+            })
+            //"Write your review"
+            //What did you like or dislike?
+            TextInputFiled(label = "Write your review", placeholder ="What did you like or dislike?" , textState = reviewContent, imeAction = ImeAction.Done, onAction = KeyboardActions {
+                keyboardController?.hide()
+            })
 
             val isValid = reviewTitle.value.isNotEmpty() && reviewContent.value.isNotEmpty() && rating.value !=0 && bookExist==true
             val comments = Comments(
@@ -244,31 +221,28 @@ fun BookReviewScreenUI(navController: NavController?= null,
                 time = currentDate,
                 rating = rating.value
             )
-            Button(onClick = {
-              firebaseViewModel.getDocumentReference("books","bookId",bookId){
-                  val result = it
-                  if(result==null){
-                      val commentsList = mutableListOf(comments)
-                      firebaseViewModel.addBooksToCollection(bookId,bookComments = commentsList)
-                      navController?.popBackStack()
-                  }else{
-                      firebaseViewModel.getFieldAsList("books",result.toString(),"comments"){
-                        val commentList = it as MutableList<Comments>
-                        commentList.add(comments)
-                          firebaseViewModel.updateField("books",result.toString(),"comments",commentList)
-                          navController?.popBackStack()
-                      }
-                  }
-              }
-            },
-                colors = ButtonDefaults.buttonColors(Color.Gray),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp), enabled = isValid) {
-                Text(text = "Submit",
-                    fontWeight = FontWeight.W500,
-                    fontSize = 17.sp)
+
+//            /*
+
+            SubmitButton(label ="Submit", isValid =isValid){
+                firebaseViewModel.getDocumentReference("books","bookId",bookId){
+                    val result = it
+                    if(result==null){
+                        val commentsList = mutableListOf(comments)
+                        firebaseViewModel.addBooksToCollection(bookId,bookComments = commentsList)
+                        navController?.popBackStack()
+                    }else{
+                        firebaseViewModel.getFieldAsList("books",result.toString(),"comments"){
+                            val commentList = it as MutableList<Comments>
+                            commentList.add(comments)
+                            firebaseViewModel.updateField("books",result.toString(),"comments",commentList)
+                            navController?.popBackStack()
+                        }
+                    }
+                }
             }
+
+
         }
     }
 }
@@ -287,6 +261,61 @@ fun BookIcon(bookImageUrl : String){
             modifier = Modifier
                 .width(120.dp)
                 .height(120.dp)
+        )
+    }
+}
+
+
+@Composable
+fun SubmitButton(label: String,isValid:Boolean,onClick :()->Unit={}){
+    Button(onClick = {
+        onClick()
+    },
+        colors = ButtonDefaults.buttonColors(Color.Gray),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp), enabled = isValid) {
+        Text(text = label,
+            fontWeight = FontWeight.W500,
+            fontSize = 17.sp)
+    }
+}
+@Composable
+fun TextInputFiled(label: String,
+                   placeholder: String,
+                   textState : MutableState<String>,
+                   keyboardType: KeyboardType = KeyboardType.Text,
+                   imeAction : ImeAction = ImeAction.Next,
+                   onAction: KeyboardActions = KeyboardActions.Default
+                  ){
+    Column {
+        Text(text = "${label}",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.W500,
+            color = Color.Gray,
+            modifier = Modifier
+                .wrapContentWidth(Alignment.Start)
+                .padding(start = 20.dp, end = 20.dp, top = 20.dp)
+        )
+        OutlinedTextField(
+            value =textState.value ,
+            onValueChange = {
+                textState.value = it
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(start = 20.dp, end = 20.dp, top = 5.dp),
+            placeholder = {
+                Text(text = placeholder,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color.Gray
+                )
+            }
+            ,   keyboardActions = onAction,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+            shape = RoundedCornerShape(12.dp)
         )
     }
 }

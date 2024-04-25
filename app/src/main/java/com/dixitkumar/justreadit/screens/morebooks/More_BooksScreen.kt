@@ -1,6 +1,7 @@
 package com.dixitkumar.justreadit.screens.morebooks
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -26,11 +28,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.navigation.ReaderScreens
 import com.dixitkumar.justreadit.screens.details.DetailsScreenViewModel
@@ -55,7 +59,7 @@ fun More_BooksScreen(navController: NavController,moreDetails : String,viewModel
             if(moreDetails.contains("author")){
                 if(viewModel.isLoading){
                     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center){
-                        LinearProgressIndicator()
+                       CircularProgressIndicator(color = colorResource(id = R.color.blue))
                     }
                 }else{
                     MoreScreenUi(
@@ -66,8 +70,10 @@ fun More_BooksScreen(navController: NavController,moreDetails : String,viewModel
                 }
             }else{
                 if(viewModel.isLoading){
-                    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center){
-                        LinearProgressIndicator()
+                    Column(modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center){
+                       CircularProgressIndicator(color = colorResource(id = R.color.blue))
                     }
                 }else{
                     MoreScreenUi(
@@ -91,9 +97,11 @@ fun MoreScreenUi(moreDetails: String,list: List<Item>,navController: NavControll
         verticalAlignment = Alignment.CenterVertically){
         Icon(imageVector = Icons.Default.ArrowBack,
             contentDescription = "Back Button",
-            modifier = Modifier.size(30.dp).clickable {
-                navController.popBackStack()
-            },
+            modifier = Modifier
+                .size(30.dp)
+                .clickable {
+                    navController.popBackStack()
+                },
             tint = Color.Black)
         Icon(imageVector = Icons.Default.Search,
             contentDescription = "Back Button",

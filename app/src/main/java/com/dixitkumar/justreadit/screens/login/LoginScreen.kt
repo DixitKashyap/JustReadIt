@@ -1,8 +1,8 @@
 package com.dixitkumar.justreadit.screens.login
 
 import android.os.Handler
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,11 +46,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -62,8 +61,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.dixitkumar.justreadit.Componenets.checkNetwork
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.navigation.ReaderScreens
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun LoginScreen(navController: NavController ,viewModel: LoginScreenViewModel = hiltViewModel()){
@@ -75,6 +76,7 @@ fun LoginScreenUi(
     navController: NavController,
     viewModel: LoginScreenViewModel
 ){
+    val context = LocalContext.current
     val loginState = remember{ mutableStateOf("LOG IN") }
     val username = rememberSaveable{ mutableStateOf("")}
     val password = remember {
@@ -88,6 +90,7 @@ fun LoginScreenUi(
     }
 
 
+    val isInternetConnected  = checkNetwork(context)
         Surface(modifier = Modifier
             .fillMaxHeight()
             .fillMaxWidth(),
@@ -99,16 +102,8 @@ fun LoginScreenUi(
                     enabled = true
                 ),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top) {
+                verticalArrangement = Arrangement.Center) {
                 Spacer(modifier = Modifier.height(10.dp))
-
-                Image(painter = painterResource(id = R.drawable.splash_image),
-                    contentDescription = "Splash Image",
-                    modifier = Modifier
-                        .width(200.dp)
-                        .height(150.dp),
-                    contentScale = ContentScale.Crop
-                    )
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(text = "Welcome Back!",
@@ -157,7 +152,20 @@ fun LoginScreenUi(
                 Row (modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End){
-                    Text(text = "Forgot Password?", fontSize = 12.sp)
+
+                    Text(text = "Forgot Password?", fontSize = 12.sp,
+                        modifier = Modifier.clickable {
+                            if(!username.value.isNullOrEmpty()){
+                                FirebaseAuth.getInstance()
+                                    .sendPasswordResetEmail(username.value).addOnCompleteListener {
+                                        if(it.isSuccessful){
+                                            Toast.makeText(context,"Check Your Email",Toast.LENGTH_LONG).show()
+                                        }
+                                    }.addOnFailureListener {
+                                        Toast.makeText(context,"Request Failed",Toast.LENGTH_LONG).show()
+                                    }
+                            }
+                        })
                     Spacer(modifier = Modifier.width(20.dp))
                 }
 
@@ -169,15 +177,18 @@ fun LoginScreenUi(
                     fontSize = 17,
                     color = colorResource(id = R.color.blue),
                     elevation = 20.dp, onClick = {
-                        if(username.value.trim().isNotEmpty() && password.value.trim().isNotEmpty()){
-                            viewModel.SignInWithEmailAndPassword(username.value.trim().toString(),password.value.trim().toString()){
-                                navController.popBackStack()
-                                navController.navigate(route = ReaderScreens.MainScreen.name)
-                            }
-                        }
+                     if(isInternetConnected){
+                         if(username.value.trim().isNotEmpty() && password.value.trim().isNotEmpty()){
+                             viewModel.SignInWithEmailAndPassword(username.value.trim().toString(),password.value.trim().toString()){
+                                 navController.popBackStack()
+                                 navController.navigate(route = ReaderScreens.MainScreen.name)
+                             }
+                         }
+                     }else{
+                         Toast.makeText(context,"Internet Not Connected",Toast.LENGTH_LONG).show()
+                     }
                     })
 
-                Spacer(modifier = Modifier.height(30.dp))
                 Spacer(modifier = Modifier.height(30.dp))
                 loginOrSignInRow(msg = "Don't hava an account? ", label ="Sign Up" ){
                     navController.navigate(route = ReaderScreens.SignupScreen.name)
@@ -196,7 +207,8 @@ fun loginOrSignInRow(
     Row(modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center) {
-        Text(text = msg)
+        Text(text = msg,
+            color = Color.Black)
         Text(text = label,
             color = colorResource(id = R.color.blue),
             fontSize = 14.sp,
@@ -239,7 +251,7 @@ fun InputField(
     Card(modifier = Modifier
         .width((screenWidth / 100) * 95)
         .height(60.dp),
-        shape = RoundedCornerShape(30.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     , elevation = CardDefaults.cardElevation(elevation),border = if(isFocused.value)BorderStroke(width = 2.dp, color = color)
         else BorderStroke(width = 2.dp,color =Color.White)
@@ -348,4 +360,7 @@ fun LoginButton(
 }
 
 
+@Composable
+fun ON(){
 
+}

@@ -1,7 +1,5 @@
 package com.dixitkumar.justreadit.screens.search
 
-import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,18 +17,17 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -48,30 +45,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.toLowerCase
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.navigation.ReaderScreens
-import com.dixitkumar.justreadit.screens.details.AddToDatabase
 import com.dixitkumar.justreadit.screens.home.BookItems
 import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
+import com.dixitkumar.justreadit.ui.theme.lightBlue
 import com.dixitkumar.justreadit.utils.GetFirebaseUserData
 import com.dixitkumar.justreadit.utils.getCurrentUserId
 import com.dixitkumar.justreadit.utils.getScreenWidth
+import java.util.logging.Handler
 
 @Composable
 fun SearchScreen(navController: NavController){
@@ -93,6 +87,12 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(), firebaseV
     val selectedItem = remember{
         mutableStateOf(0)
     }
+
+    val showProgress = remember{ mutableStateOf(true) }
+
+    android.os.Handler().postDelayed({
+        showProgress.value = false
+    },3000)
     val recentSearchList = GetFirebaseUserData(viewModel= firebaseViewModel)?.recentSearched
     Surface(modifier = Modifier
         .fillMaxSize(), color = Color.White) {
@@ -115,18 +115,21 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(), firebaseV
                         Tab(selected =index == selectedItem.value,
                             onClick = {
                                      selectedItem.value = index
-                                if(selectedItem.value == 0){
-                                    viewModel.searchQuery(searchQuery.value)
-                                    viewModel.suggested_book(searchQuery.value)
-                                    //Adding Search Query TO Db
-                                }
-                                else if(selectedItem.value == 1){
-                                    viewModel.searchQuery("author=${searchQuery.value}")
-                                }else if(selectedItem.value == 2){
-                                    viewModel.searchQuery("subject:${searchQuery.value}")
+                                when (selectedItem.value) {
+                                    0 -> {
+                                        viewModel.searchQuery(searchQuery.value)
+                                        viewModel.suggested_book(searchQuery.value)
+                                        //Adding Search Query TO Db
+                                    }
+                                    1 -> {
+                                        viewModel.searchQuery("author=${searchQuery.value}")
+                                    }
+                                    2 -> {
+                                        viewModel.searchQuery("subject:${searchQuery.value}")
+                                    }
                                 }
                             },
-                            text = { Text(text = "${tabItemList[index]}",
+                            text = { Text(text = tabItemList[index],
                                 fontWeight = FontWeight.Bold,
                                 color = Color.DarkGray,
                                 fontSize = 14.sp)})
@@ -135,25 +138,44 @@ fun SearchScreenUi(viewModel: SearchScreenViewModel = hiltViewModel(), firebaseV
 
                 if(viewModel.default_list.isNotEmpty() && viewModel.suggestedList.isNotEmpty()) {
                     SearchedBook(list1 = viewModel.default_list,list2 = viewModel.suggestedList, list3 = recentSearchList, navController = navController)
+                }else{
+                    Column(modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 100.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center) {
+
+                        if(showProgress.value){
+                            CircularProgressIndicator(color = lightBlue)
+                        }else{
+                            Image(painter = painterResource(id = R.drawable.file_not_found),
+                                contentDescription ="No Search Image Found" ,
+                                contentScale = ContentScale.Crop)
+
+                            Text(text = "No Book Found",
+                                color = Color.DarkGray,
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.W500
+                            )
+                        }
+                    }
                 }
             }
     }
 }
 fun SearchQueryToDb(query : String,viewModel: FirebaseViewModel){
     val current = getCurrentUserId()
-    Log.d("TAG","Search Current user id"+current)
+
 
     viewModel.getDocumentReference("users","userId", current){documentRef->
-        Log.d("TAG","Documnet Ref"+documentRef.toString())
 
         viewModel.getFieldAsList("users",documentRef.toString(),"recentSearched"){
             var contentList = it as MutableList<String>
-            Log.d("SEARCH",contentList.toString())
-            if(it.isNullOrEmpty()){
+            if(it.isEmpty()){
                 contentList = mutableListOf(query)
                 viewModel.updateField("users",documentRef.toString(),"recentSearched",contentList)
             }
-            else if(!contentList.isNullOrEmpty()&&contentList?.size!! <=10){
+            else if(!contentList.isNullOrEmpty() && contentList?.size!! <=10){
                 contentList?.add(query)
                 viewModel.updateField("users",documentRef.toString(),"recentSearched",contentList)
             }else if(!contentList.isNullOrEmpty() && contentList.size>=10){
@@ -176,7 +198,7 @@ fun SearchArea(
         searchQuery.value.trim().isNotBlank()
     }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val screenWidth = getScreenWidth()
+    getScreenWidth()
     Row(modifier = Modifier
         .fillMaxWidth()
         .border(
@@ -188,13 +210,13 @@ fun SearchArea(
        ,
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically){
-        Icon(imageVector = Icons.Default.ArrowBack,
+        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = "Back Button",
             tint = Color.DarkGray,
             modifier = Modifier
                 .size(27.dp)
                 .clickable {
-                  navController.popBackStack()
+                    navController.popBackStack()
                 })
         Spacer(modifier = Modifier.width(15.dp))
             InputFiled(valueState =searchQuery ,
@@ -203,7 +225,7 @@ fun SearchArea(
                 imeAction = ImeAction.Search,
                 onAction = KeyboardActions {
                     if(!valid)return@KeyboardActions
-                    onSearch(searchQuery.value.toString().trim())
+                    onSearch(searchQuery.value.trim())
                     keyboardController?.hide()
                 })
 
@@ -213,14 +235,6 @@ fun SearchArea(
 
 @Composable
 fun SearchedBook(list1 :List<Item>,list2:List<Item>,list3 : List<String>? = null,navController: NavController){
-    if(list1.isEmpty() && list2.isEmpty()){
-        Column(modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
-            Text(text = "No Book Found")
-        }
-    }else {
-
         Column(modifier = Modifier
             .wrapContentHeight()) {
             Row(
@@ -276,7 +290,7 @@ fun SearchedBook(list1 :List<Item>,list2:List<Item>,list3 : List<String>? = null
 
         }
     }
-}
+
 @Composable
 fun SearchedItem(book : Item?, navController: NavController){
     Row(modifier = Modifier
@@ -342,7 +356,7 @@ fun recentSearchItems(query: String,viewModel: SearchScreenViewModel = hiltViewM
             tint = Color.DarkGray,
             modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.width(20.dp))
-        Text(text = "${query.toLowerCase()}",
+        Text(text = query.lowercase(),
             fontFamily = FontFamily.SansSerif,
             color = Color.DarkGray)
     }
@@ -383,8 +397,6 @@ fun InputFiled(
                 modifier = Modifier.clickable {
                     if(valueState.value.isNotEmpty()){
                         valueState.value = ""
-                    }else{
-
                     }
                 })
         }

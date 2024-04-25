@@ -25,7 +25,6 @@ fun getCurrentUserId() : String{
 
 fun GetFirebaseUserData(viewModel: FirebaseViewModel) : MUser?{
     val currentUser = getCurrentUserId()
-    val bookList: MutableList<Item> = mutableListOf()
 
     if (!viewModel.userData.value.data.isNullOrEmpty()) {
         Log.d("User Data", "USER ID ${currentUser.toString()}")

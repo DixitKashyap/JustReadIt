@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LockOpen
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.dixitkumar.justreadit.Componenets.checkNetwork
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.navigation.ReaderScreens
 import com.dixitkumar.justreadit.screens.login.InputField
@@ -78,7 +80,8 @@ fun SignUpScreenUi(navController: NavController,viewModel: LoginScreenViewModel)
     }
 
     val signInState = remember{ mutableStateOf("SIGN IN") }
-
+    val context = LocalContext.current
+    val isInternetConnected = checkNetwork(context =context )
     Surface(
         modifier = Modifier
             .fillMaxSize(), color = Color.White
@@ -99,7 +102,7 @@ fun SignUpScreenUi(navController: NavController,viewModel: LoginScreenViewModel)
                 Spacer(modifier = Modifier.width(20.dp))
                 Icon(
                     modifier = Modifier.size(30.dp),
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Default.ArrowBack,
                     tint = Color.Gray,
                     contentDescription = "Back Button"
                 )
@@ -230,6 +233,8 @@ fun SignUpScreenUi(navController: NavController,viewModel: LoginScreenViewModel)
                     color = colorResource(id = R.color.blue),
                     elevation = 20.dp,
                     onClick = {
+
+                     if(isInternetConnected){
                         if (email.value.trim().toString().isNotEmpty()
                             && username.value.trim().toString().isNotEmpty()
                             && phone.value.trim().toString().isNotEmpty()
@@ -255,11 +260,16 @@ fun SignUpScreenUi(navController: NavController,viewModel: LoginScreenViewModel)
                                 Log.d("TAG", "password not matched")
                             }
                         }
+                     }else{
+                         Toast.makeText(context,"Internet Not Connected",Toast.LENGTH_LONG).show()
+                     }
                     })
 
                 Spacer(modifier = Modifier.height(40.dp))
                 loginOrSignInRow(msg = "Already have an account? ", label = "Login here") {
-                    navController.navigate(route = ReaderScreens.HomeScreen.name)
+                    navController.navigate(route = ReaderScreens.LoginScreen.name){
+                        popUpTo(0)
+                    }
                 }
             }
         }

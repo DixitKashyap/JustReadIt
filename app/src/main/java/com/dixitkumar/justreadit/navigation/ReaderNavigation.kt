@@ -1,5 +1,7 @@
 package com.dixitkumar.justreadit.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -8,6 +10,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.dixitkumar.justreadit.screens.MainScreen
 import com.dixitkumar.justreadit.screens.SplashScreen
+import com.dixitkumar.justreadit.screens.account.AboutScreen
+import com.dixitkumar.justreadit.screens.account.EditAccountScreen
 import com.dixitkumar.justreadit.screens.details.AllCommentScreen
 import com.dixitkumar.justreadit.screens.details.BookReviewScreen
 import com.dixitkumar.justreadit.screens.details.Book_DetailsScreen
@@ -17,6 +21,7 @@ import com.dixitkumar.justreadit.screens.morebooks.More_BooksScreen
 import com.dixitkumar.justreadit.screens.search.SearchScreen
 import com.dixitkumar.justreadit.screens.signup.SignUpScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ReaderNavigation(){
     
@@ -65,7 +70,7 @@ fun ReaderNavigation(){
             type = NavType.StringType
         })){
             backStackEntry ->
-            backStackEntry?.arguments?.getString("bookImageUrl").let{
+            backStackEntry.arguments?.getString("bookImageUrl").let{
                 BookReviewScreen(navController = navController, bookId = it.toString())
             }
         }
@@ -75,9 +80,17 @@ fun ReaderNavigation(){
             type = NavType.StringType
         })){
             backStackEntry->
-            backStackEntry?.arguments?.getString("bookId").let {
+            backStackEntry.arguments?.getString("bookId").let {
                 AllCommentScreen(navController = navController,bookId = it.toString())
             }
+        }
+        
+        composable(route=ReaderScreens.AboutTheAppScreen.name){
+            AboutScreen(navController = navController)
+        }
+        
+        composable(route = ReaderScreens.EditAccountScreens.name){
+            EditAccountScreen(navController = navController)
         }
     }
 }

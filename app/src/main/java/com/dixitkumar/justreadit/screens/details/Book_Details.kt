@@ -1,8 +1,8 @@
 package com.dixitkumar.justreadit.screens.details
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,23 +16,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ThumbUp
@@ -77,11 +74,11 @@ import coil.compose.rememberAsyncImagePainter
 import com.dixitkumar.justreadit.Componenets.RatingBar
 import com.dixitkumar.justreadit.R
 import com.dixitkumar.justreadit.data.Resource
-import com.dixitkumar.justreadit.model.Comments
 import com.dixitkumar.justreadit.model.Item
 import com.dixitkumar.justreadit.navigation.ReaderScreens
 import com.dixitkumar.justreadit.screens.home.SingleCategoryBooks
 import com.dixitkumar.justreadit.screens.wishlist.FirebaseViewModel
+import com.dixitkumar.justreadit.utils.GetFirebaseBookData
 import com.dixitkumar.justreadit.utils.formatString
 import com.dixitkumar.justreadit.utils.getCurrentUserId
 import com.dixitkumar.justreadit.utils.getScreenWidth
@@ -89,24 +86,33 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 
+@SuppressLint("SimpleDateFormat")
 @Composable
 fun Book_DetailsScreen(navController: NavController,bookId : String
-                       ,viewModel: DetailsScreenViewModel = hiltViewModel()
+                       ,viewModel: DetailsScreenViewModel = hiltViewModel(),
+                       firebaseViewModel: FirebaseViewModel= hiltViewModel()
 ){
 
     val bookDetailsState = produceState<Resource<Item>>(initialValue =Resource.Loading() ) {
         value = viewModel.getBookInfo(bookId)
     }.value
+    val firebaseBookData = GetFirebaseBookData(bookId = bookId, viewModel = firebaseViewModel)
+    val currentUserId = getCurrentUserId()
+    var bookRating = 0
 
-    val context = LocalContext.current
+    if(!firebaseBookData?.comments.isNullOrEmpty()){
+        val userComments = firebaseBookData?.comments?.filter { it.userId == currentUserId }
+        if(!userComments.isNullOrEmpty()){
+            bookRating = userComments?.get(0)?.rating ?:0
+        }
+    }
+
     val sdf = SimpleDateFormat("dd-MM-yyyy")
     val currentDate = sdf.format(Date())
     val startedReadingStateText = remember{mutableStateOf("Started At...")}
     var startedReadingState = false
     val finishedReadingStateText = remember{ mutableStateOf("Finished At...") }
     var finishedReadingState = false
-    val userId  = getCurrentUserId()
-    val firebaseViewModel : FirebaseViewModel = hiltViewModel()
 
 
     if(bookDetailsState.data == null){
@@ -132,7 +138,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                 .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween){
-                Icon(imageVector = Icons.Default.ArrowBack,
+                Icon(imageVector = Icons.AutoMirrored.Default.ArrowBack,
                     contentDescription = "Back Button",
                     tint = Color.DarkGray,
                     modifier = Modifier
@@ -167,7 +173,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                     elevation = CardDefaults.cardElevation(6.dp),
                     colors = CardDefaults.cardColors(Color.White)
                 ) {
-                    val bookImageUrl = bookDetailsState.data?.volumeInfo?.imageLinks?.thumbnail
+                    val bookImageUrl = bookDetailsState.data.volumeInfo?.imageLinks?.thumbnail
 
                     Image(
                         painter =  if(bookImageUrl.isNullOrEmpty())
@@ -188,7 +194,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                     .padding(12.dp)
             ) {
                 Text(
-                    text = bookDetailsState.data?.volumeInfo?.title.toString(),
+                    text = bookDetailsState.data.volumeInfo.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 30.sp,
                     maxLines = 3,
@@ -198,7 +204,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                     modifier = Modifier.padding(start = 2.dp, top = 5.dp, bottom = 15.dp)
                 )
                 Text(
-                    text = "by ${bookDetailsState.data?.volumeInfo?.authors}", fontSize = 17.sp,
+                    text = "by ${bookDetailsState.data.volumeInfo.authors}", fontSize = 17.sp,
                     fontWeight = FontWeight.W500,
                     maxLines = 2,
                     color = Color.Black,
@@ -207,7 +213,8 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
-                val ratingVal = remember { mutableStateOf(0) }
+                val ratingVal = remember { mutableStateOf(bookRating) }
+               
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -225,7 +232,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                     }
                     Spacer(modifier = Modifier.width((getScreenWidth() / 100) * 35))
                     Text(
-                        text = "${bookDetailsState.data?.volumeInfo?.pageCount} pages",
+                        text = "${bookDetailsState.data.volumeInfo.pageCount} pages",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
                         color = Color.DarkGray, modifier = Modifier
@@ -294,7 +301,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                                             result.toString(),
                                             "readingList"
                                         ) {
-                                            var contentList = it
+                                            val contentList = it
                                             contentList.put(bookId, currentDate)
                                             if (contentList != null) {
                                                 firebaseViewModel.updateField(
@@ -313,7 +320,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                                             result.toString(),
                                             "readingList"
                                         ) {
-                                            var contentList = it
+                                            val contentList = it
                                             contentList.remove(bookId)
                                             if (contentList != null) {
                                                 firebaseViewModel.updateField(
@@ -351,7 +358,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                                             result.toString(),
                                             "finishedReading"
                                         ) {
-                                            var contentList = it
+                                            val contentList = it
                                             contentList.put(bookId, currentDate)
                                             if (contentList != null) {
                                                 firebaseViewModel.updateField(
@@ -370,7 +377,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
                                             result.toString(),
                                             "finishedReading"
                                         ) {
-                                            var contentList = it
+                                            val contentList = it
                                             contentList.remove(bookId)
                                             if (contentList != null) {
                                                 firebaseViewModel.updateField(
@@ -535,7 +542,7 @@ fun Book_DetailsScreen(navController: NavController,bookId : String
 
 @Composable
 fun GetRelatedBooks(readerNavController: NavController,searchQuery : String,
-                          viewModel: DetailsScreenViewModel = hiltViewModel()) {
+                          viewModel: DetailsScreenViewModel ) {
     LaunchedEffect(searchQuery) {
         if(viewModel.relatedBooks.isEmpty()){
             viewModel.getRelatedBook("${searchQuery}")
@@ -605,7 +612,7 @@ fun bookDescription(book : String){
         AnimatedVisibility(visible = expanded.value) {
             Column(modifier = Modifier.wrapContentHeight()){
                 Text(
-                    text = "${cleanDescription}",
+                    text = cleanDescription,
                     fontWeight = FontWeight.Normal,
                     fontSize = 16.sp,
                     textAlign = TextAlign.Start,
@@ -813,6 +820,7 @@ fun CommentArea(navController: NavController,bookId: String=""){
                         Text(
                             text = "Leave a Review",
                             fontWeight = FontWeight.Bold,
+                            color = Color.Black,
                             fontSize = 16.sp,
                         )
                         RatingBar(rating = 0, enabled = false) {

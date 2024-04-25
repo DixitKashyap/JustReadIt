@@ -14,8 +14,9 @@ enum class ReaderScreens {
     MoreBookScreen,
     SearchScreen,
     MyReadingsScreen,
-    WishlistScreen,
-    AccountScreen;
+    AccountScreen,
+    AboutTheAppScreen,
+    EditAccountScreens;
 
     companion object{
         fun fromRoute(route:String?) : ReaderScreens
