@@ -1,4 +1,5 @@
 #BookShelf
+<br>
 ![status](https://img.shields.io/badge/Status-Active-brightgreen)
 ![Kotlin](https://img.shields.io/badge/Kotlin-100%25-brightgreen)
 <br>
@@ -16,7 +17,7 @@
 <br>
 <br>
 
-<h4>Screenshot of Quiz App<h4>
+<h4>Screenshot of BookShelf App<h4>
 <img src = "https://github.com/DixitKashyap/Quiz_App_Python_Tkinter/blob/main/Screenshots/Screenshot1.png"
 width=30% height=20%/>
 <img src = "https://github.com/DixitKashyap/Quiz_App_Python_Tkinter/blob/main/Screenshots/Screenshot2.png"
